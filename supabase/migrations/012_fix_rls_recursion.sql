@@ -69,6 +69,12 @@ CREATE POLICY "Admins can view all offers"
   ON offers FOR SELECT
   USING (public.is_admin());
 
+-- activity_events
+DROP POLICY IF EXISTS "Admins can view all events" ON activity_events;
+CREATE POLICY "Admins can view all events"
+  ON activity_events FOR SELECT
+  USING (public.is_admin());
+
 -- analytics_events
 DROP POLICY IF EXISTS "Admins can view analytics" ON analytics_events;
 CREATE POLICY "Admins can view analytics"

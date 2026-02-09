@@ -25,6 +25,18 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
     "desktop"
   );
 
+  // Prevent embedding the same app inside itself
+  const isSameOrigin = project.url
+    ? (() => {
+        try {
+          const projectHost = new URL(project.url).origin;
+          return projectHost === window.location.origin;
+        } catch {
+          return false;
+        }
+      })()
+    : false;
+
   const deviceWidths = {
     desktop: "100%",
     tablet: "768px",
@@ -86,7 +98,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
       </div>
 
       <div className="flex-1 bg-muted/30 flex items-start justify-center p-4 overflow-auto">
-        {project.url ? (
+        {project.url && !isSameOrigin ? (
           <div
             className="bg-white rounded-lg shadow-sm overflow-hidden h-full transition-all"
             style={{
@@ -142,6 +154,21 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
                 }}
               />
             )}
+          </div>
+        ) : project.url && isSameOrigin ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <p className="text-muted-foreground mb-3">
+              Cannot preview this app inside itself.
+            </p>
+            <a href={project.url} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                Open in new tab
+                <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+              </Button>
+            </a>
+            <Button variant="ghost" size="sm" className="mt-2" onClick={onOpenSettings}>
+              Change URL
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
