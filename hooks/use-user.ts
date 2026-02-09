@@ -25,6 +25,27 @@ export function useUser() {
           .eq("id", user.id)
           .single();
         setProfile(data);
+
+        // Sync avatar from auth metadata if missing in profile
+        if (data && !data.avatar_url) {
+          const meta = user.user_metadata;
+          const avatarUrl = meta?.avatar_url || meta?.picture;
+          const fullName = meta?.full_name || meta?.name;
+          if (avatarUrl || fullName) {
+            const updates: Record<string, string> = {};
+            if (avatarUrl) updates.avatar_url = avatarUrl;
+            if (fullName && !data.full_name) updates.full_name = fullName;
+            if (Object.keys(updates).length > 0) {
+              const { data: updated } = await supabase
+                .from("profiles")
+                .update(updates)
+                .eq("id", user.id)
+                .select()
+                .single();
+              if (updated) setProfile(updated);
+            }
+          }
+        }
       }
 
       setLoading(false);

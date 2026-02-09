@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function Navbar() {
@@ -67,15 +67,20 @@ export function Navbar() {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <button type="button" className="rounded-full outline-none focus:ring-2 focus:ring-ring cursor-pointer">
                     <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={profile?.avatar_url || ""}
+                        alt={profile?.full_name || "User"}
+                        referrerPolicy="no-referrer"
+                      />
                       <AvatarFallback className="text-xs">
                         {profile?.full_name?.charAt(0)?.toUpperCase() ||
                           profile?.email?.charAt(0)?.toUpperCase() ||
                           "U"}
                       </AvatarFallback>
                     </Avatar>
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">

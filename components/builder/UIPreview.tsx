@@ -105,7 +105,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
             {iframeError ? (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center">
                 {project.screenshot_url ? (
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={project.screenshot_url}
                     alt="Project screenshot"

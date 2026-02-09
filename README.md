@@ -69,6 +69,18 @@ OPENAI_API_KEY=your-openai-api-key
 
 All tables have **Row Level Security (RLS) enabled**. The migrations create all necessary RLS policies.
 
+**Alternative: Using the Supabase CLI**
+
+If you prefer running migrations from the terminal:
+
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase db push
+```
+
+Your project ref is in your Supabase URL: `https://YOUR_PROJECT_REF.supabase.co`
+
 ### 4. Auth Configuration
 
 In your Supabase dashboard:
@@ -152,5 +164,5 @@ Set environment variables in the Vercel dashboard before deploying.
 
 - Redemption fulfillment is manual (admin marks as fulfilled in admin panel)
 - Screenshot upload for listings uses URL input rather than file upload
-- Google OAuth not implemented (email/password only)
+- Google OAuth requires configuring the Google provider in Supabase Authentication settings
 - Supabase Realtime not used for live updates (panel refreshes on actions and via polling)
