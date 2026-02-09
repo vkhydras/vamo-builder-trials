@@ -23,11 +23,6 @@ const TAG_OPTIONS = [
   { value: "ask", label: "Ask", color: "bg-amber-100 text-amber-700 border-amber-200" },
 ];
 
-const QUICK_ACTIONS = [
-  { label: "Profile", reward: "+100", tag: null, message: "I'd like to update my founder profile" },
-  { label: "Vibecoding Activity", reward: "+100", tag: "feature", message: "I've been vibecoding and made progress on the product" },
-  { label: "Collaborators", reward: "+100", tag: null, message: "I want to add info about my collaborators and team" },
-];
 
 export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -65,11 +60,11 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
     }
   }, [messages]);
 
-  async function handleSend(messageOverride?: string, tagOverride?: string) {
-    const messageText = (messageOverride || input).trim();
+  async function handleSend() {
+    const messageText = input.trim();
     if (!messageText || sending) return;
 
-    if (!messageOverride) setInput("");
+    setInput("");
     setSending(true);
 
     const tempUserMsg: Message = {
@@ -79,7 +74,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
       role: "user",
       content: messageText,
       extracted_intent: null,
-      tag: (tagOverride || selectedTag) as Message["tag"],
+      tag: selectedTag as Message["tag"],
       pineapples_earned: 0,
       created_at: new Date().toISOString(),
     };
@@ -92,7 +87,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
         body: JSON.stringify({
           projectId,
           message: messageText,
-          tag: tagOverride || selectedTag,
+          tag: selectedTag,
         }),
       });
 
@@ -145,10 +140,6 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
     );
   }
 
-  const showQuickActions = messages.length === 0 || (
-    messages.length > 0 && messages[messages.length - 1]?.role === "assistant"
-  );
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -157,13 +148,8 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
           <div className="h-6 w-6 rounded-full bg-emerald-600 flex items-center justify-center">
             <Sparkles className="h-3 w-3 text-white" />
           </div>
-          <div>
-            <h3 className="font-semibold text-sm">Builder Chat</h3>
-          </div>
+          <h3 className="font-semibold text-sm">Builder Chat</h3>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5 ml-8">
-          Go to <span className="font-medium text-foreground">Business Analysis</span> to earn pineapples. You can add any of the fields to redeem pineapples 🍍
-        </p>
       </div>
 
       {/* Messages */}
@@ -243,25 +229,6 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
           )}
         </div>
       </div>
-
-      {/* Quick action suggestions */}
-      {showQuickActions && !sending && (
-        <div className="px-4 pb-2">
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.label}
-                onClick={() => handleSend(action.message, action.tag || undefined)}
-                className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border bg-background hover:bg-muted transition-colors"
-                disabled={sending}
-              >
-                <span>{action.label}</span>
-                <span className="text-amber-600 font-medium">{action.reward}🍍</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Input area */}
       <div className="border-t p-3 space-y-2">

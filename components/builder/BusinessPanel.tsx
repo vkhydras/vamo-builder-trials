@@ -46,6 +46,7 @@ export function BusinessPanel({
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkType, setLinkType] = useState<string>("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkingAsset, setLinkingAsset] = useState(false);
   const [linkedAssets, setLinkedAssets] = useState<Record<string, string>>({});
 
   const supabase = useMemo(() => createClient(), []);
@@ -102,43 +103,48 @@ export function BusinessPanel({
 
   async function handleLinkAsset() {
     if (!linkUrl.trim()) return;
+    setLinkingAsset(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const eventTypeMap: Record<string, string> = {
-      linkedin: "link_linkedin",
-      github: "link_github",
-      website: "link_website",
-    };
-    const eventType = eventTypeMap[linkType];
+      const eventTypeMap: Record<string, string> = {
+        linkedin: "link_linkedin",
+        github: "link_github",
+        website: "link_website",
+      };
+      const eventType = eventTypeMap[linkType];
 
-    await supabase.from("activity_events").insert({
-      project_id: project.id,
-      user_id: user.id,
-      event_type: eventType,
-      description: `Linked ${linkType}: ${linkUrl}`,
-      metadata: { url: linkUrl },
-    });
+      await supabase.from("activity_events").insert({
+        project_id: project.id,
+        user_id: user.id,
+        event_type: eventType,
+        description: `Linked ${linkType}: ${linkUrl}`,
+        metadata: { url: linkUrl },
+      });
 
-    const idempotencyKey = `${project.id}-${eventType}`;
-    await fetch("/api/rewards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        projectId: project.id,
-        eventType,
-        idempotencyKey,
-      }),
-    });
+      const idempotencyKey = `${project.id}-${eventType}`;
+      await fetch("/api/rewards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          eventType,
+          idempotencyKey,
+        }),
+      });
 
-    toast.success(`${linkType} linked! Pineapples earned!`);
-    setLinkDialogOpen(false);
-    setLinkUrl("");
-    loadData();
-    onProjectUpdate();
+      toast.success(`${linkType} linked! Pineapples earned!`);
+      setLinkDialogOpen(false);
+      setLinkUrl("");
+      loadData();
+      onProjectUpdate();
+    } finally {
+      setLinkingAsset(false);
+    }
   }
 
   function getEventIcon(eventType: string) {
@@ -414,9 +420,9 @@ export function BusinessPanel({
             <Button
               className="w-full"
               onClick={handleLinkAsset}
-              disabled={!linkUrl.trim()}
+              disabled={!linkUrl.trim() || linkingAsset}
             >
-              Link & Earn Pineapples 🍍
+              {linkingAsset ? "Linking..." : "Link & Earn Pineapples 🍍"}
             </Button>
           </div>
         </DialogContent>
