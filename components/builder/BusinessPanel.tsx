@@ -5,11 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { Project, ActivityEvent } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -65,11 +62,7 @@ export function BusinessPanel({
         .from("activity_events")
         .select("*")
         .eq("project_id", project.id)
-        .in("event_type", [
-          "feature_shipped",
-          "customer_added",
-          "revenue_logged",
-        ])
+        .in("event_type", ["feature_shipped", "customer_added", "revenue_logged"])
         .order("created_at", { ascending: false }),
       supabase
         .from("activity_events")
@@ -82,11 +75,9 @@ export function BusinessPanel({
     setEvents(eventsRes.data || []);
     setTractionSignals(tractionRes.data || []);
 
-    // Build linked assets map
     const assets: Record<string, string> = {};
     (linksRes.data || []).forEach((e) => {
-      const url =
-        (e.metadata as Record<string, string>)?.url || "";
+      const url = (e.metadata as Record<string, string>)?.url || "";
       if (e.event_type === "link_linkedin") assets.linkedin = url;
       if (e.event_type === "link_github") assets.github = url;
       if (e.event_type === "link_website") assets.website = url;
@@ -96,7 +87,6 @@ export function BusinessPanel({
   }, [project.id, supabase]);
 
   useEffect(() => {
-    // refreshKey changes trigger a data reload
     void loadData();
   }, [refreshKey, loadData]);
 
@@ -133,7 +123,6 @@ export function BusinessPanel({
       metadata: { url: linkUrl },
     });
 
-    // Award pineapples
     const idempotencyKey = `${project.id}-${eventType}`;
     await fetch("/api/rewards", {
       method: "POST",
@@ -152,47 +141,24 @@ export function BusinessPanel({
     onProjectUpdate();
   }
 
-  function getProgressColor(score: number) {
-    if (score <= 25) return "text-red-500";
-    if (score <= 50) return "text-yellow-500";
-    if (score <= 75) return "text-green-500";
-    return "text-blue-500";
-  }
-
-  function getProgressLabel(score: number) {
-    if (score <= 25) return "Early Stage";
-    if (score <= 50) return "Building";
-    if (score <= 75) return "Traction";
-    return "Growth";
-  }
-
   function getEventIcon(eventType: string) {
     switch (eventType) {
-      case "feature_shipped":
-        return <Rocket className="h-3.5 w-3.5" />;
-      case "customer_added":
-        return <Users className="h-3.5 w-3.5" />;
-      case "revenue_logged":
-        return <DollarSign className="h-3.5 w-3.5" />;
-      case "link_linkedin":
-        return <Linkedin className="h-3.5 w-3.5" />;
-      case "link_github":
-        return <Github className="h-3.5 w-3.5" />;
-      case "link_website":
-        return <Globe className="h-3.5 w-3.5" />;
-      case "reward_earned":
-        return <Trophy className="h-3.5 w-3.5" />;
-      case "prompt":
-        return <Activity className="h-3.5 w-3.5" />;
-      default:
-        return <Activity className="h-3.5 w-3.5" />;
+      case "feature_shipped": return <Rocket className="h-3.5 w-3.5" />;
+      case "customer_added": return <Users className="h-3.5 w-3.5" />;
+      case "revenue_logged": return <DollarSign className="h-3.5 w-3.5" />;
+      case "link_linkedin": return <Linkedin className="h-3.5 w-3.5" />;
+      case "link_github": return <Github className="h-3.5 w-3.5" />;
+      case "link_website": return <Globe className="h-3.5 w-3.5" />;
+      case "reward_earned": return <Trophy className="h-3.5 w-3.5" />;
+      case "prompt": return <Activity className="h-3.5 w-3.5" />;
+      default: return <Activity className="h-3.5 w-3.5" />;
     }
   }
 
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-8 w-48" />
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-32 w-full" />
@@ -201,313 +167,260 @@ export function BusinessPanel({
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <div className="px-4 py-3 border-b">
-        <h3 className="font-semibold text-sm">Business Analysis</h3>
-      </div>
-
-      <div className="p-4 space-y-4">
-        {/* Valuation Range */}
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Valuation Range
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            {project.valuation_low > 0 || project.valuation_high > 0 ? (
-              <p className="text-lg font-semibold">
-                ${project.valuation_low.toLocaleString()} – $
-                {project.valuation_high.toLocaleString()}
-              </p>
-            ) : (
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">
-                  Not yet estimated
-                </p>
-                <Badge variant="secondary" className="text-xs">
-                  New
-                </Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Why I Built This */}
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Why I Built This
-              </CardTitle>
-              {!editingWhy && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setEditingWhy(true)}
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            {editingWhy ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={whyText}
-                  onChange={(e) => setWhyText(e.target.value)}
-                  maxLength={1000}
-                  rows={3}
-                  className="text-sm"
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {whyText.length}/1000
-                  </span>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingWhy(false);
-                        setWhyText(project.why_built || "");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={saveWhy}>
-                      Save
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm">
-                {project.why_built || (
-                  <span className="text-muted-foreground italic">
-                    Click edit to add your &quot;why&quot;
-                  </span>
-                )}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Progress Score */}
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Progress Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="flex items-center justify-between mb-2">
-              <span
-                className={`text-2xl font-bold ${getProgressColor(project.progress_score)}`}
-              >
-                {project.progress_score}
+    <div className="h-full overflow-y-auto">
+      <div className="p-4 space-y-6">
+        {/* Section 1: Valuation Range */}
+        <div>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Valuation Range
+          </h3>
+          {project.valuation_low > 0 || project.valuation_high > 0 ? (
+            <p className="text-xl font-bold">
+              ${project.valuation_low.toLocaleString()} &ndash; ${project.valuation_high.toLocaleString()}
+            </p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">Not yet estimated</p>
+              <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                Log progress to unlock
               </span>
-              <Badge variant="outline">{getProgressLabel(project.progress_score)}</Badge>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all ${
-                  project.progress_score <= 25
-                    ? "bg-red-500"
-                    : project.progress_score <= 50
-                      ? "bg-yellow-500"
-                      : project.progress_score <= 75
-                        ? "bg-green-500"
-                        : "bg-blue-500"
-                }`}
-                style={{ width: `${project.progress_score}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
+          )}
+          <p className="text-xs text-muted-foreground mt-1 italic">
+            Estimates based on logged activity only.
+          </p>
+        </div>
 
-        {/* Traction Signals */}
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Traction Signals
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            {tractionSignals.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Start logging progress in the chat to see traction signals here.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {tractionSignals.map((signal) => (
-                  <div
-                    key={signal.id}
-                    className="flex items-start gap-2 text-sm"
-                  >
-                    <div className="mt-0.5 shrink-0">
-                      {getEventIcon(signal.event_type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="break-words">{signal.description}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(signal.created_at), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <hr />
 
-        <Separator />
-
-        {/* Linked Assets */}
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Linked Assets
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="space-y-2">
-              {[
-                {
-                  type: "linkedin",
-                  label: "LinkedIn",
-                  icon: <Linkedin className="h-4 w-4" />,
-                },
-                {
-                  type: "github",
-                  label: "GitHub",
-                  icon: <Github className="h-4 w-4" />,
-                },
-                {
-                  type: "website",
-                  label: "Website",
-                  icon: <Globe className="h-4 w-4" />,
-                },
-              ].map((asset) => (
-                <div
-                  key={asset.type}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    {asset.icon}
-                    <span>{asset.label}</span>
-                  </div>
-                  {linkedAssets[asset.type] ? (
-                    <div className="flex items-center gap-1 text-green-600">
-                      <Check className="h-3.5 w-3.5" />
-                      <span className="text-xs">Linked</span>
-                    </div>
-                  ) : (
-                    <Dialog
-                      open={linkDialogOpen && linkType === asset.type}
-                      onOpenChange={(open) => {
-                        setLinkDialogOpen(open);
-                        if (open) setLinkType(asset.type);
-                      }}
-                    >
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => setLinkType(asset.type)}
-                        >
-                          <LinkIcon className="h-3 w-3 mr-1" />
-                          Link
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>
-                            Link {asset.label}
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>URL</Label>
-                            <Input
-                              placeholder={`https://${asset.type === "linkedin" ? "linkedin.com/in/..." : asset.type === "github" ? "github.com/..." : "your-site.com"}`}
-                              value={linkUrl}
-                              onChange={(e) => setLinkUrl(e.target.value)}
-                            />
-                          </div>
-                          <Button
-                            className="w-full"
-                            onClick={handleLinkAsset}
-                            disabled={!linkUrl.trim()}
-                          >
-                            Link & Earn Pineapples
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Separator />
-
-        {/* Mini Activity Timeline */}
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            {events.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No activity yet. Start chatting!
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {events.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-start gap-2 text-sm"
-                  >
-                    <div className="mt-0.5 shrink-0 text-muted-foreground">
-                      {getEventIcon(event.event_type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs break-words line-clamp-2">
-                        {event.description}
-                      </p>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(event.created_at), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {events.length > 0 && onViewTimeline && (
+        {/* Section 2: Why I Built This */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Why I Built This
+            </h3>
+            {!editingWhy && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full mt-2 text-xs text-muted-foreground"
-                onClick={onViewTimeline}
+                className="h-6 text-xs"
+                onClick={() => setEditingWhy(true)}
               >
+                <Pencil className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
+          {editingWhy ? (
+            <div className="space-y-2">
+              <Textarea
+                value={whyText}
+                onChange={(e) => setWhyText(e.target.value)}
+                maxLength={1000}
+                rows={4}
+                className="text-sm"
+                placeholder="Why did you start building this?"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{whyText.length}/1000</span>
+                <div className="flex gap-1.5">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                    setEditingWhy(false);
+                    setWhyText(project.why_built || "");
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs" onClick={saveWhy}>Save</Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {project.why_built || "Click edit to add your \"why\" statement"}
+            </p>
+          )}
+        </div>
+
+        <hr />
+
+        {/* Section 3: Progress Score */}
+        <div>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Progress Score
+          </h3>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-muted-foreground">
+              {project.progress_score <= 25 ? "Early Stage" :
+               project.progress_score <= 50 ? "Building" :
+               project.progress_score <= 75 ? "Traction" : "Growth"}
+            </span>
+            <span className={`text-lg font-bold ${
+              project.progress_score <= 25 ? "text-red-500" :
+              project.progress_score <= 50 ? "text-yellow-500" :
+              project.progress_score <= 75 ? "text-green-500" :
+              "text-blue-500"
+            }`}>
+              {project.progress_score}/100
+            </span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${
+                project.progress_score <= 25 ? "bg-red-500" :
+                project.progress_score <= 50 ? "bg-yellow-500" :
+                project.progress_score <= 75 ? "bg-green-500" :
+                "bg-blue-500"
+              }`}
+              style={{ width: `${project.progress_score}%` }}
+            />
+          </div>
+        </div>
+
+        <hr />
+
+        {/* Section 4: Traction Signals */}
+        <div>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Traction Signals
+          </h3>
+          {tractionSignals.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-3 text-center bg-muted/30 rounded-lg">
+              Start logging progress in the chat to see traction signals here.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tractionSignals.map((signal) => (
+                <div key={signal.id} className="flex items-start gap-2.5 py-1.5">
+                  <div className="mt-0.5 shrink-0 text-muted-foreground">
+                    {getEventIcon(signal.event_type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm break-words">{signal.description}</p>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(signal.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <hr />
+
+        {/* Section 5: Linked Assets */}
+        <div>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Linked Assets
+          </h3>
+          <div className="space-y-2">
+            {[
+              { type: "linkedin", label: "LinkedIn", icon: <Linkedin className="h-4 w-4" />, reward: 5 },
+              { type: "github", label: "GitHub", icon: <Github className="h-4 w-4" />, reward: 5 },
+              { type: "website", label: "Website", icon: <Globe className="h-4 w-4" />, reward: 3 },
+            ].map((asset) => (
+              <div key={asset.type} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2 text-sm">
+                  {asset.icon}
+                  <span>{asset.label}</span>
+                </div>
+                {linkedAssets[asset.type] ? (
+                  <div className="flex items-center gap-1 text-emerald-600">
+                    <Check className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">Linked</span>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setLinkType(asset.type);
+                      setLinkDialogOpen(true);
+                    }}
+                  >
+                    <LinkIcon className="h-3 w-3 mr-1" />
+                    Link <span className="text-amber-600 ml-1">+{asset.reward}🍍</span>
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <hr />
+
+        {/* Section 6: Mini Activity Timeline */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Activity Timeline
+            </h3>
+            {onViewTimeline && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onViewTimeline}>
                 View full timeline
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+          {events.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-3 text-center bg-muted/30 rounded-lg">
+              No activity yet. Start chatting to log progress!
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {events.map((event) => (
+                <div key={event.id} className="flex items-start gap-2.5 py-1">
+                  <div className="mt-0.5 shrink-0 text-muted-foreground">
+                    {getEventIcon(event.event_type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm break-words">{event.description}</p>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Link Asset Dialog */}
+      <Dialog
+        open={linkDialogOpen}
+        onOpenChange={(open) => {
+          setLinkDialogOpen(open);
+          if (!open) setLinkUrl("");
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link {linkType}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>URL</Label>
+              <Input
+                placeholder={`https://${
+                  linkType === "linkedin" ? "linkedin.com/in/..." :
+                  linkType === "github" ? "github.com/..." :
+                  "your-site.com"
+                }`}
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleLinkAsset}
+              disabled={!linkUrl.trim()}
+            >
+              Link & Earn Pineapples 🍍
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -93,9 +93,19 @@ export default function MarketplacePage() {
               {listings.map((listing) => (
                 <Card
                   key={listing.id}
-                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
                   onClick={() => setSelected(listing)}
                 >
+                  {listing.screenshots && listing.screenshots.length > 0 && (
+                    <div className="aspect-video bg-muted overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={listing.screenshots[0]}
+                        alt={listing.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                   <CardHeader>
                     <CardTitle className="text-lg">{listing.title}</CardTitle>
                   </CardHeader>

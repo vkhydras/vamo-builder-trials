@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function Navbar() {
   const { user, profile, loading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
 
   async function handleSignOut() {
@@ -27,32 +28,33 @@ export function Navbar() {
     router.refresh();
   }
 
+  const navLinks = [
+    { href: "/projects", label: "Projects" },
+    { href: "/marketplace", label: "Marketplace" },
+    { href: "/wallet", label: "Wallet" },
+  ];
+
   return (
     <header className="border-b bg-background sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/projects" className="text-lg font-bold tracking-tight">
-            VAMO
+          <Link href="/projects" className="text-base font-black tracking-tighter">
+            &gt;&gt;&gt;VAMO
           </Link>
-          <nav className="hidden md:flex items-center gap-4 text-sm">
-            <Link
-              href="/projects"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Projects
-            </Link>
-            <Link
-              href="/marketplace"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Marketplace
-            </Link>
-            <Link
-              href="/wallet"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Wallet
-            </Link>
+          <nav className="hidden md:flex items-center gap-1 text-sm">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-1.5 rounded-md transition-colors ${
+                  pathname === link.href
+                    ? "bg-foreground/5 text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
 
@@ -61,10 +63,13 @@ export function Navbar() {
             <Skeleton className="h-8 w-24" />
           ) : user ? (
             <>
-              <div className="flex items-center gap-1.5 text-sm font-medium">
+              <Link
+                href="/wallet"
+                className="flex items-center gap-1.5 text-sm font-medium hover:opacity-80 transition-opacity"
+              >
                 <span>🍍</span>
                 <span>{profile?.pineapple_balance ?? 0}</span>
-              </div>
+              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className="rounded-full outline-none focus:ring-2 focus:ring-ring cursor-pointer">
@@ -74,7 +79,7 @@ export function Navbar() {
                         alt={profile?.full_name || "User"}
                         referrerPolicy="no-referrer"
                       />
-                      <AvatarFallback className="text-xs">
+                      <AvatarFallback className="text-xs bg-foreground text-background">
                         {profile?.full_name?.charAt(0)?.toUpperCase() ||
                           profile?.email?.charAt(0)?.toUpperCase() ||
                           "U"}
@@ -82,8 +87,8 @@ export function Navbar() {
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground truncate">
                     {profile?.email}
                   </div>
                   <DropdownMenuSeparator />
@@ -93,13 +98,19 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/wallet">Wallet</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/marketplace">Marketplace</Link>
+                  </DropdownMenuItem>
                   {profile?.is_admin && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin">Admin</Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>

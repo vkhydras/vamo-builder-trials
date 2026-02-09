@@ -28,12 +28,13 @@ import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import {
   MessageSquare,
-  Tag,
   DollarSign,
   Pencil,
   Check,
   X,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function BuilderPage() {
   const params = useParams();
@@ -152,14 +153,13 @@ export default function BuilderPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get timeline snapshot
     const { data: timeline } = await supabase
       .from("activity_events")
       .select("*")
       .eq("project_id", project.id)
       .order("created_at", { ascending: true });
 
-    const { data: messages } = await supabase
+    const { count: messageCount } = await supabase
       .from("messages")
       .select("id", { count: "exact", head: true })
       .eq("project_id", project.id);
@@ -174,7 +174,7 @@ export default function BuilderPage() {
       timeline_snapshot: timeline,
       metrics: {
         progress_score: project.progress_score,
-        total_prompts: messages,
+        total_prompts: messageCount || 0,
         traction_signals: (timeline || []).filter((e) =>
           ["feature_shipped", "customer_added", "revenue_logged"].includes(
             e.event_type
@@ -189,13 +189,11 @@ export default function BuilderPage() {
       return;
     }
 
-    // Update project status
     await supabase
       .from("projects")
       .update({ status: "listed" })
       .eq("id", project.id);
 
-    // Log events
     await supabase.from("activity_events").insert({
       project_id: project.id,
       user_id: user.id,
@@ -203,9 +201,7 @@ export default function BuilderPage() {
       description: `Listed project for sale: ${listingTitle}`,
     });
 
-    await trackEvent("listing_created", {
-      projectId: project.id,
-    });
+    await trackEvent("listing_created", { projectId: project.id });
 
     toast.success("Listing published!");
     setListingOpen(false);
@@ -215,97 +211,139 @@ export default function BuilderPage() {
 
   if (loading || !project) {
     return (
-      <div className="h-[calc(100vh-57px)] flex items-center justify-center">
-        <div className="space-y-4 w-64">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
+      <div className="h-screen flex flex-col">
+        <div className="h-14 border-b flex items-center px-4 gap-4">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-8 w-48" />
+          <div className="ml-auto">
+            <Skeleton className="h-8 w-24" />
+          </div>
+        </div>
+        <div className="flex-1 flex">
+          <div className="w-[300px] border-r p-4 space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex gap-2">
+                <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                <div className="space-y-1 flex-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 p-4">
+            <Skeleton className="h-full w-full rounded-lg" />
+          </div>
         </div>
       </div>
     );
   }
 
   const headerContent = (
-    <div className="flex items-center justify-between px-4 py-2 border-b bg-background">
-      <div className="flex items-center gap-3">
-        {editingName ? (
-          <div className="flex items-center gap-1.5">
-            <Input
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              className="h-8 text-sm w-48"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveName();
-                if (e.key === "Escape") {
-                  setEditingName(false);
-                  setNameInput(project.name);
-                }
-              }}
-            />
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveName}>
-              <Check className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => {
+    <header className="h-14 border-b flex items-center px-4 gap-3 bg-background shrink-0">
+      <Link href="/projects" className="flex items-center gap-2 shrink-0">
+        <span className="text-base font-black tracking-tighter">&gt;&gt;&gt;VAMO</span>
+      </Link>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-sm">🍍</span>
+        <span className="text-sm font-semibold">{profile?.pineapple_balance ?? 0}</span>
+      </div>
+
+      <div className="flex-1" />
+
+      {/* Project name (editable) */}
+      {editingName ? (
+        <div className="flex items-center gap-1.5">
+          <Input
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            className="h-8 text-sm w-40"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveName();
+              if (e.key === "Escape") {
                 setEditingName(false);
                 setNameInput(project.name);
-              }}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ) : (
-          <button
-            className="font-semibold text-sm hover:text-muted-foreground transition-colors flex items-center gap-1.5"
-            onClick={() => setEditingName(true)}
-          >
-            {project.name}
-            <Pencil className="h-3 w-3 opacity-50" />
-          </button>
-        )}
-        <Badge variant="secondary" className="text-xs">
-          🍍 {profile?.pineapple_balance ?? 0}
-        </Badge>
-      </div>
-      <div className="flex items-center gap-2">
-        {project.progress_score >= 10 && (
-          <Button variant="outline" size="sm" onClick={handleGetOffer}>
-            <DollarSign className="h-3.5 w-3.5 mr-1" />
-            Get Vamo Offer
+              }
+            }}
+          />
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveName}>
+            <Check className="h-3.5 w-3.5" />
           </Button>
-        )}
-        {project.progress_score >= 20 && (
           <Button
-            size="sm"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => {
-              setListingTitle(project.name);
-              setListingPriceLow(project.valuation_low.toString());
-              setListingPriceHigh(project.valuation_high.toString());
-              setListingOpen(true);
+              setEditingName(false);
+              setNameInput(project.name);
             }}
           >
-            <Tag className="h-3.5 w-3.5 mr-1" />
-            List for Sale
+            <X className="h-3.5 w-3.5" />
           </Button>
-        )}
-      </div>
-    </div>
+        </div>
+      ) : (
+        <button
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 max-w-[150px] truncate"
+          onClick={() => setEditingName(true)}
+        >
+          {project.name}
+          <Pencil className="h-3 w-3 opacity-50 shrink-0" />
+        </button>
+      )}
+
+      {/* Platform badge */}
+      {project.url && (
+        <Badge variant="outline" className="text-xs shrink-0">
+          <ExternalLink className="h-3 w-3 mr-1" />
+          {(() => {
+            try {
+              return new URL(project.url).hostname.replace("www.", "").split(".")[0];
+            } catch {
+              return "Link";
+            }
+          })()}
+        </Badge>
+      )}
+
+      {project.progress_score >= 10 && (
+        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleGetOffer}>
+          <DollarSign className="h-3 w-3 mr-1" />
+          Get Vamo Offer
+        </Button>
+      )}
+
+      {project.progress_score >= 20 && (
+        <Button
+          size="sm"
+          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={() => {
+            setListingTitle(project.name);
+            setListingPriceLow(project.valuation_low.toString());
+            setListingPriceHigh(project.valuation_high.toString());
+            setListingOpen(true);
+          }}
+        >
+          List for Sale
+        </Button>
+      )}
+    </header>
   );
 
   return (
-    <div className="h-[calc(100vh-57px)] flex flex-col">
+    <div className="h-screen flex flex-col bg-background">
       {headerContent}
 
-      {/* Desktop: 3-panel layout */}
+      {/* Desktop (≥1280px): All three panels side by side */}
       <div className="flex-1 hidden xl:flex overflow-hidden">
-        <div className="w-[320px] border-r flex flex-col overflow-hidden">
+        {/* Left: Chat ~300px */}
+        <div className="w-[300px] border-r flex flex-col overflow-hidden shrink-0">
           <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
         </div>
-        <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Center: UI Preview — flexible */}
+        <div className="flex-1 flex flex-col overflow-hidden border-r">
           <UIPreview
             project={project}
             onOpenSettings={() => {
@@ -314,7 +352,9 @@ export default function BuilderPage() {
             }}
           />
         </div>
-        <div className="w-[360px] border-l flex flex-col overflow-hidden">
+
+        {/* Right: Business Panel ~360px */}
+        <div className="w-[360px] flex flex-col overflow-hidden shrink-0">
           <BusinessPanel
             project={project}
             refreshKey={refreshKey}
@@ -324,9 +364,10 @@ export default function BuilderPage() {
         </div>
       </div>
 
-      {/* Tablet: 2 panels + slide-out chat */}
+      {/* Tablet (768-1279px): Chat as Sheet, Center+Right visible */}
       <div className="flex-1 hidden md:flex xl:hidden overflow-hidden">
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Center: UI Preview — flexible */}
+        <div className="flex-1 flex flex-col overflow-hidden border-r">
           <UIPreview
             project={project}
             onOpenSettings={() => {
@@ -335,7 +376,9 @@ export default function BuilderPage() {
             }}
           />
         </div>
-        <div className="w-[360px] border-l flex flex-col overflow-hidden">
+
+        {/* Right: Business Panel ~360px */}
+        <div className="w-[360px] flex flex-col overflow-hidden shrink-0">
           <BusinessPanel
             project={project}
             refreshKey={refreshKey}
@@ -343,37 +386,42 @@ export default function BuilderPage() {
             onViewTimeline={() => setTimelineOpen(true)}
           />
         </div>
+      </div>
+
+      {/* Tablet: Floating chat button + Sheet */}
+      <div className="hidden md:block xl:hidden">
         <Sheet>
           <SheetTrigger asChild>
             <Button
               size="icon"
-              className="fixed bottom-4 left-4 h-12 w-12 rounded-full shadow-lg z-50 xl:hidden"
+              className="fixed bottom-4 left-4 h-12 w-12 rounded-full shadow-lg z-50 bg-emerald-600 hover:bg-emerald-700"
             >
-              <MessageSquare className="h-5 w-5" />
+              <MessageSquare className="h-5 w-5 text-white" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[350px] p-0">
-            <ChatPanel
-              projectId={projectId}
-              onMessageSent={handleMessageSent}
-            />
+            <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Mobile: Tab-based navigation */}
+      {/* Mobile (<768px): Tab-based navigation */}
       <div className="flex-1 md:hidden overflow-hidden">
         <Tabs defaultValue="chat" className="flex flex-col h-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-none">
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-            <TabsTrigger value="business">Business</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 rounded-none border-b">
+            <TabsTrigger value="chat" className="text-xs">
+              <MessageSquare className="h-3.5 w-3.5 mr-1" />
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="text-xs">
+              Preview
+            </TabsTrigger>
+            <TabsTrigger value="business" className="text-xs">
+              Business
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="chat" className="flex-1 overflow-hidden m-0">
-            <ChatPanel
-              projectId={projectId}
-              onMessageSent={handleMessageSent}
-            />
+            <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
           </TabsContent>
           <TabsContent value="preview" className="flex-1 overflow-hidden m-0">
             <UIPreview
@@ -389,6 +437,7 @@ export default function BuilderPage() {
               project={project}
               refreshKey={refreshKey}
               onProjectUpdate={loadProject}
+              onViewTimeline={() => setTimelineOpen(true)}
             />
           </TabsContent>
         </Tabs>
@@ -434,30 +483,28 @@ export default function BuilderPage() {
             </div>
           ) : offerData ? (
             <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Offer Range</p>
-                <p className="text-2xl font-bold">
-                  ${offerData.offer.offer_low.toLocaleString()} – $
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <p className="text-xs text-emerald-700 font-medium mb-1">Offer Range</p>
+                <p className="text-2xl font-bold text-emerald-900">
+                  ${offerData.offer.offer_low.toLocaleString()} &ndash; $
                   {offerData.offer.offer_high.toLocaleString()}
                 </p>
               </div>
               <div>
                 <p className="text-sm font-medium mb-1">Reasoning</p>
-                <p className="text-sm text-muted-foreground">
-                  {offerData.reasoning}
-                </p>
+                <p className="text-sm text-muted-foreground">{offerData.reasoning}</p>
               </div>
               {offerData.signals && offerData.signals.length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-1">Signals Used</p>
-                  <ul className="text-sm text-muted-foreground list-disc pl-4">
+                  <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-0.5">
                     {offerData.signals.map((s, i) => (
                       <li key={i}>{s}</li>
                     ))}
                   </ul>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-xs text-muted-foreground italic border-t pt-3">
                 This is a non-binding estimate based on your logged activity.
               </p>
               <div className="flex gap-2">
@@ -469,16 +516,12 @@ export default function BuilderPage() {
                   Dismiss
                 </Button>
                 <Button
-                  className="flex-1"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                   onClick={() => {
                     setOfferOpen(false);
                     setListingTitle(project.name);
-                    setListingPriceLow(
-                      offerData.offer.offer_low.toString()
-                    );
-                    setListingPriceHigh(
-                      offerData.offer.offer_high.toString()
-                    );
+                    setListingPriceLow(offerData.offer.offer_low.toString());
+                    setListingPriceHigh(offerData.offer.offer_high.toString());
                     setListingOpen(true);
                   }}
                 >
@@ -510,6 +553,9 @@ export default function BuilderPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>List Project for Sale</DialogTitle>
+            <DialogDescription>
+              Your activity timeline will be included as verified proof of progress.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -547,7 +593,7 @@ export default function BuilderPage() {
               </div>
             </div>
             <Button
-              className="w-full"
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
               onClick={handleCreateListing}
               disabled={!listingTitle.trim() || listingSubmitting}
             >

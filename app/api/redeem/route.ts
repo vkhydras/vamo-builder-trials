@@ -46,6 +46,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Insert activity event for redemption
+    await supabase.from("activity_events").insert({
+      user_id: user.id,
+      project_id: null,
+      event_type: "reward_redeemed",
+      description: `Redeemed ${amount} pineapples for ${rewardType.replace(/_/g, " ")}`,
+      metadata: { amount, rewardType, redemption_id: rpcResult.redemption_id },
+    });
+
     // Track analytics
     await supabase.from("analytics_events").insert({
       user_id: user.id,
@@ -115,6 +124,15 @@ async function fallbackRedeem(
     reward_amount: -amount,
     balance_after: newBalance,
     idempotency_key: `redemption-${redemption?.id}`,
+  });
+
+  // Insert activity event for redemption
+  await supabase.from("activity_events").insert({
+    user_id: userId,
+    project_id: null,
+    event_type: "reward_redeemed",
+    description: `Redeemed ${amount} pineapples for ${rewardType.replace(/_/g, " ")}`,
+    metadata: { amount, rewardType, redemption_id: redemption?.id },
   });
 
   // Track analytics

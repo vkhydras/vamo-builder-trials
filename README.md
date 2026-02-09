@@ -1,4 +1,4 @@
-# Vamo — Build & Grow Your Startup
+# >>>VAMO — Build & Grow Your Startup
 
 Vamo is a Lovable-style builder where non-technical founders iterate on their startup UI and business progress in parallel. Instead of toggling between UI and code, users toggle between:
 
@@ -11,17 +11,17 @@ The product rewards real project progress with **pineapples** (an in-app currenc
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 16 (App Router) |
-| UI Components | shadcn/ui (New York style) |
-| Styling | Tailwind CSS 4 |
+| Framework | Next.js 14 (App Router) |
+| UI Components | shadcn/ui |
+| Styling | Tailwind CSS |
 | Backend / DB | Supabase (PostgreSQL + RLS) |
-| Auth | Supabase Auth (email/password) |
+| Auth | Supabase Auth (email/password + Google OAuth) |
 | AI | OpenAI API (gpt-4o-mini) |
 | Hosting | Vercel |
 
 ## No Service Role Key
 
-**Confirmed: No service role key is used anywhere in the codebase.** All data access goes through the anon key + user JWT + RLS policies. Admin operations use RLS policies that check `profiles.is_admin = true`.
+**Confirmed: No service role key is used anywhere in the codebase.** All data access goes through the anon key + user JWT + RLS policies. Admin operations use RLS policies that check `profiles.is_admin = true` via a `SECURITY DEFINER` function to avoid recursion.
 
 ## Setup Instructions
 
@@ -66,6 +66,9 @@ OPENAI_API_KEY=your-openai-api-key
    - `009_analytics_events.sql` — Analytics event tracking
    - `010_missing_policies.sql` — Admin and owner update policies
    - `011_redeem_rpc.sql` — Atomic redemption RPC function
+   - `012_fix_rls_recursion.sql` — Fix admin RLS infinite recursion with SECURITY DEFINER
+   - `013_update_policy.sql` — Activity events admin policy update
+   - `014_activity_events_nullable_project.sql` — Allow null project_id for non-project events
 
 All tables have **Row Level Security (RLS) enabled**. The migrations create all necessary RLS policies.
 
@@ -88,6 +91,7 @@ In your Supabase dashboard:
 1. Go to **Authentication > Settings**
 2. Under **Email Auth**, ensure "Enable Email Signup" is enabled
 3. Optionally disable "Confirm Email" for faster development testing
+4. (Optional) For Google OAuth: Go to **Authentication > Providers > Google** and configure with your Google Cloud credentials. Set the redirect URL to `https://your-domain.com/auth/callback`
 
 ### 5. Make Yourself Admin
 
@@ -114,7 +118,7 @@ Visit `http://localhost:3000`
 | `/signup` | Signup page | No |
 | `/projects` | Project list | Yes |
 | `/projects/new` | Create project | Yes |
-| `/builder/[id]` | 3-panel workspace | Yes |
+| `/builder/[id]` | 2-panel workspace with tabs | Yes |
 | `/wallet` | Pineapple wallet & redemptions | Yes |
 | `/marketplace` | Public marketplace listings | No |
 | `/admin` | Admin dashboard | Yes (admin only) |
@@ -147,9 +151,13 @@ Visit `http://localhost:3000`
 
 ### Builder Workspace
 
-The workspace is a responsive 3-panel layout:
-- **Desktop (>=1280px):** All three panels side by side
-- **Tablet (768-1279px):** Center + Right panels visible, Chat in slide-out sheet
+The workspace uses a 2-panel layout matching the reference design:
+- **Left panel:** Builder Chat for logging progress updates
+- **Right panel:** Tabbed content area switching between "Project" (UI Preview) and "Business Analysis"
+- **Business Analysis** has sub-navigation: Analysis, Profile, Activity, Collaborators
+
+**Responsive behavior:**
+- **Desktop (>=768px):** Chat + tabbed content side by side
 - **Mobile (<768px):** Tab-based navigation between Chat, Preview, and Business
 
 ## Deployment
@@ -165,4 +173,4 @@ Set environment variables in the Vercel dashboard before deploying.
 - Redemption fulfillment is manual (admin marks as fulfilled in admin panel)
 - Screenshot upload for listings uses URL input rather than file upload
 - Google OAuth requires configuring the Google provider in Supabase Authentication settings
-- Supabase Realtime not used for live updates (panel refreshes on actions and via polling)
+- Revenue, Multiple, Awards, Charts metrics are placeholder ("???") until more data collection is implemented

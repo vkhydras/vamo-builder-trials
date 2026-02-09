@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { trackEvent } from "@/lib/analytics";
@@ -45,6 +46,8 @@ export default function AdminPage() {
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyticsPage, setAnalyticsPage] = useState(0);
+  const [analyticsFilter, setAnalyticsFilter] = useState("");
+  const [analyticsDateFilter, setAnalyticsDateFilter] = useState("");
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -366,6 +369,37 @@ export default function AdminPage() {
               <CardTitle>Analytics Events</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="flex gap-3 mb-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Filter by event name..."
+                    value={analyticsFilter}
+                    onChange={(e) => setAnalyticsFilter(e.target.value)}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="date"
+                    value={analyticsDateFilter}
+                    onChange={(e) => setAnalyticsDateFilter(e.target.value)}
+                    className="h-9 text-sm w-40"
+                  />
+                </div>
+                {(analyticsFilter || analyticsDateFilter) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9"
+                    onClick={() => {
+                      setAnalyticsFilter("");
+                      setAnalyticsDateFilter("");
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -375,7 +409,16 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {analyticsEvents.map((e) => (
+                  {analyticsEvents
+                    .filter((e) => {
+                      if (analyticsFilter && !e.event_name.toLowerCase().includes(analyticsFilter.toLowerCase())) return false;
+                      if (analyticsDateFilter) {
+                        const eventDate = new Date(e.created_at).toISOString().split("T")[0];
+                        if (eventDate !== analyticsDateFilter) return false;
+                      }
+                      return true;
+                    })
+                    .map((e) => (
                     <TableRow key={e.id}>
                       <TableCell className="text-sm font-medium">
                         {e.event_name}
