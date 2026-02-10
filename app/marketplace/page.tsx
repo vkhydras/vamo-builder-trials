@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Navbar } from "@/components/navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 import { trackEvent } from "@/lib/analytics";
+import { Store, TrendingUp, DollarSign } from "lucide-react";
 
 interface ListingWithProject {
   id: string;
@@ -55,49 +55,49 @@ export default function MarketplacePage() {
   }, [supabase]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold">Marketplace</h1>
-            <p className="text-muted-foreground">
-              Discover and acquire startup projects
+            <h1 className="text-2xl font-black tracking-tight text-gray-900">
+              Marketplace
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Discover and acquire startup projects with verified progress
             </p>
           </div>
 
           {loading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-5 w-32" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </CardContent>
-                </Card>
+                <div
+                  key={i}
+                  className="rounded-2xl border border-gray-200 p-6 space-y-3"
+                >
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
               ))}
             </div>
           ) : listings.length === 0 ? (
-            <Card className="text-center py-12">
-              <CardContent>
-                <p className="text-muted-foreground">
-                  No listings available yet. Be the first to list!
-                </p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-20 rounded-2xl border border-dashed border-gray-200">
+              <Store className="h-8 w-8 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">
+                No listings available yet. Be the first to list!
+              </p>
+            </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {listings.map((listing) => (
-                <Card
+                <div
                   key={listing.id}
-                  className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
+                  className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
                   onClick={() => setSelected(listing)}
                 >
                   {listing.screenshots && listing.screenshots.length > 0 && (
-                    <div className="aspect-video bg-muted overflow-hidden">
+                    <div className="aspect-video bg-gray-50 overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={listing.screenshots[0]}
@@ -106,39 +106,42 @@ export default function MarketplacePage() {
                       />
                     </div>
                   )}
-                  <CardHeader>
-                    <CardTitle className="text-lg">{listing.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                  <div className="p-5 space-y-3">
+                    <h3 className="font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
+                      {listing.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
                       {listing.description ||
                         listing.projects?.description ||
                         "No description"}
                     </p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pt-1">
                       {listing.asking_price_low != null &&
                       listing.asking_price_high != null ? (
-                        <span className="text-sm font-semibold">
+                        <span className="text-sm font-bold text-gray-900">
                           ${listing.asking_price_low.toLocaleString()} – $
                           {listing.asking_price_high.toLocaleString()}
                         </span>
                       ) : (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-gray-400">
                           Price not set
                         </span>
                       )}
-                      <Badge variant="outline">
-                        {listing.projects?.progress_score || 0}% progress
+                      <Badge
+                        variant="secondary"
+                        className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px]"
+                      >
+                        {listing.projects?.progress_score || 0}%
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-[11px] text-gray-400">
                       Listed{" "}
                       {formatDistanceToNow(new Date(listing.created_at), {
                         addSuffix: true,
                       })}
                     </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -148,58 +151,72 @@ export default function MarketplacePage() {
             open={!!selected}
             onOpenChange={() => setSelected(null)}
           >
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg border-gray-200">
               <DialogHeader>
-                <DialogTitle>{selected?.title}</DialogTitle>
+                <DialogTitle className="text-lg font-bold text-gray-900">
+                  {selected?.title}
+                </DialogTitle>
               </DialogHeader>
               {selected && (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {selected.description ||
-                        selected.projects?.description ||
-                        "No description provided"}
-                    </p>
-                  </div>
+                <div className="space-y-5">
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {selected.description ||
+                      selected.projects?.description ||
+                      "No description provided"}
+                  </p>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Asking Price
-                      </p>
-                      <p className="font-semibold">
+                    <div className="rounded-xl bg-gray-50 p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <DollarSign className="h-3.5 w-3.5 text-gray-400" />
+                        <p className="text-[11px] text-gray-400 uppercase tracking-wider">
+                          Asking Price
+                        </p>
+                      </div>
+                      <p className="font-bold text-gray-900">
                         {selected.asking_price_low != null &&
                         selected.asking_price_high != null
                           ? `$${selected.asking_price_low.toLocaleString()} – $${selected.asking_price_high.toLocaleString()}`
                           : "Not set"}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Progress Score
-                      </p>
-                      <p className="font-semibold">
+                    <div className="rounded-xl bg-gray-50 p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="h-3.5 w-3.5 text-gray-400" />
+                        <p className="text-[11px] text-gray-400 uppercase tracking-wider">
+                          Progress
+                        </p>
+                      </div>
+                      <p className="font-bold text-gray-900">
                         {selected.projects?.progress_score || 0}/100
                       </p>
                     </div>
                   </div>
-                  {selected.metrics && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Metrics
-                      </p>
-                      <div className="text-sm space-y-1">
-                        {Object.entries(selected.metrics).map(([key, val]) => (
-                          <div key={key} className="flex justify-between">
-                            <span className="capitalize text-muted-foreground">
-                              {key.replace(/_/g, " ")}
-                            </span>
-                            <span>{String(val)}</span>
-                          </div>
-                        ))}
+                  {selected.metrics &&
+                    Object.keys(selected.metrics).length > 0 && (
+                      <div>
+                        <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">
+                          Metrics
+                        </p>
+                        <div className="text-sm space-y-1.5">
+                          {Object.entries(selected.metrics).map(
+                            ([key, val]) => (
+                              <div
+                                key={key}
+                                className="flex justify-between py-1 border-b border-gray-100 last:border-0"
+                              >
+                                <span className="capitalize text-gray-500">
+                                  {key.replace(/_/g, " ")}
+                                </span>
+                                <span className="font-medium text-gray-900">
+                                  {String(val)}
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground italic">
+                    )}
+                  <p className="text-[11px] text-gray-400 italic">
                     Contact the seller through the platform to make an offer.
                   </p>
                 </div>

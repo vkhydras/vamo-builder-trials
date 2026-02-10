@@ -5,9 +5,12 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vamo — Build & Grow Your Startup",
+  title: "Vamo",
   description:
     "Vamo is a builder where non-technical founders iterate on their startup UI and business progress in parallel.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

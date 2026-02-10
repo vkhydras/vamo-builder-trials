@@ -34,6 +34,7 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function BuilderPage() {
@@ -240,9 +241,9 @@ export default function BuilderPage() {
   }
 
   const headerContent = (
-    <header className="h-14 border-b flex items-center px-4 gap-3 bg-background shrink-0">
+    <header className="h-14 border-b border-gray-100 flex items-center px-4 gap-3 bg-white/90 backdrop-blur-md shrink-0">
       <Link href="/projects" className="flex items-center gap-2 shrink-0">
-        <span className="text-base font-black tracking-tighter">&gt;&gt;&gt;VAMO</span>
+        <Image src="/logo.svg" alt="Vamo" width={64} height={16} />
       </Link>
 
       <div className="flex items-center gap-1.5 shrink-0">

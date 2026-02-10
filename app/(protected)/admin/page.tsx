@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +19,14 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { trackEvent } from "@/lib/analytics";
 import type { Profile, Project, Redemption } from "@/lib/types";
+import {
+  Users,
+  FolderOpen,
+  MessageSquare,
+  Trophy,
+  ArrowDownRight,
+  Store,
+} from "lucide-react";
 
 interface AnalyticsEvent {
   id: string;
@@ -154,89 +161,134 @@ export default function AdminPage() {
     setAnalyticsPage(nextPage);
   }
 
+  function getStatusBadge(status: string) {
+    switch (status) {
+      case "active":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "listed":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "sold":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "archived":
+        return "bg-gray-100 text-gray-600 border-gray-200";
+      default:
+        return "";
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton key={i} className="h-24 rounded-2xl" />
           ))}
         </div>
-        <Skeleton className="h-64" />
+        <Skeleton className="h-64 rounded-2xl" />
       </div>
     );
   }
 
+  const statItems = stats
+    ? [
+        { label: "Users", value: stats.totalUsers, icon: Users, color: "text-blue-600 bg-blue-50" },
+        { label: "Projects", value: stats.totalProjects, icon: FolderOpen, color: "text-emerald-600 bg-emerald-50" },
+        { label: "Prompts", value: stats.totalPrompts, icon: MessageSquare, color: "text-violet-600 bg-violet-50" },
+        { label: "Earned", value: `${stats.totalPineapplesEarned}`, icon: Trophy, color: "text-amber-600 bg-amber-50", suffix: " 🍍" },
+        { label: "Redeemed", value: `${stats.totalPineapplesRedeemed}`, icon: ArrowDownRight, color: "text-red-600 bg-red-50", suffix: " 🍍" },
+        { label: "Listings", value: stats.activeListings, icon: Store, color: "text-cyan-600 bg-cyan-50" },
+      ]
+    : [];
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+      <div>
+        <h1 className="text-2xl font-black tracking-tight text-gray-900">
+          Admin Dashboard
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Overview of platform activity
+        </p>
+      </div>
 
       {/* Stats */}
       {stats && (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-          {[
-            { label: "Users", value: stats.totalUsers },
-            { label: "Projects", value: stats.totalProjects },
-            { label: "Prompts", value: stats.totalPrompts },
-            { label: "Earned", value: `🍍 ${stats.totalPineapplesEarned}` },
-            { label: "Redeemed", value: `🍍 ${stats.totalPineapplesRedeemed}` },
-            { label: "Listings", value: stats.activeListings },
-          ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="p-4 text-center">
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
-              </CardContent>
-            </Card>
+          {statItems.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">
+                  {stat.label}
+                </p>
+                <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${stat.color}`}>
+                  <stat.icon className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-gray-900">
+                {stat.value}
+                {stat.suffix && (
+                  <span className="text-base">{stat.suffix}</span>
+                )}
+              </p>
+            </div>
           ))}
         </div>
       )}
 
       <Tabs defaultValue="redemptions">
-        <TabsList>
-          <TabsTrigger value="redemptions">
-            Pending Redemptions ({pendingRedemptions.length})
+        <TabsList className="bg-gray-100 border border-gray-200">
+          <TabsTrigger value="redemptions" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+            Redemptions ({pendingRedemptions.length})
           </TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="users" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+            Projects
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         {/* Pending Redemptions */}
         <TabsContent value="redemptions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Redemptions</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900">Pending Redemptions</h2>
+            </div>
+            <div className="p-6">
               {pendingRedemptions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
+                <p className="text-sm text-gray-500 text-center py-10">
                   No pending redemptions
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Requested</TableHead>
-                      <TableHead>Actions</TableHead>
+                    <TableRow className="border-gray-100">
+                      <TableHead className="text-gray-500">User</TableHead>
+                      <TableHead className="text-gray-500">Amount</TableHead>
+                      <TableHead className="text-gray-500">Type</TableHead>
+                      <TableHead className="text-gray-500">Requested</TableHead>
+                      <TableHead className="text-gray-500">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pendingRedemptions.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="text-sm">
+                      <TableRow key={r.id} className="border-gray-100">
+                        <TableCell className="text-sm text-gray-700">
                           {r.profiles?.email || r.user_id}
                         </TableCell>
-                        <TableCell className="text-sm font-medium">
-                          🍍 {r.amount}
+                        <TableCell className="text-sm font-semibold text-gray-900">
+                          {r.amount} 🍍
                         </TableCell>
-                        <TableCell className="text-sm capitalize">
+                        <TableCell className="text-sm capitalize text-gray-700">
                           {r.reward_type.replace(/_/g, " ")}
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-sm text-gray-500">
                           {formatDistanceToNow(new Date(r.created_at), {
                             addSuffix: true,
                           })}
@@ -245,8 +297,7 @@ export default function AdminPage() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="text-green-600"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
                               onClick={() =>
                                 updateRedemption(r.id, "fulfilled")
                               }
@@ -256,7 +307,7 @@ export default function AdminPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-red-600"
+                              className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-8"
                               onClick={() => updateRedemption(r.id, "failed")}
                             >
                               Fail
@@ -268,43 +319,48 @@ export default function AdminPage() {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Users */}
         <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Users</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900">All Users</h2>
+            </div>
+            <div className="p-6">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Pineapples</TableHead>
-                    <TableHead>Admin</TableHead>
-                    <TableHead>Joined</TableHead>
+                  <TableRow className="border-gray-100">
+                    <TableHead className="text-gray-500">Email</TableHead>
+                    <TableHead className="text-gray-500">Name</TableHead>
+                    <TableHead className="text-gray-500">Pineapples</TableHead>
+                    <TableHead className="text-gray-500">Admin</TableHead>
+                    <TableHead className="text-gray-500">Joined</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="text-sm">{u.email}</TableCell>
-                      <TableCell className="text-sm">
+                    <TableRow key={u.id} className="border-gray-100">
+                      <TableCell className="text-sm text-gray-700">{u.email}</TableCell>
+                      <TableCell className="text-sm text-gray-700">
                         {u.full_name || "—"}
                       </TableCell>
-                      <TableCell className="text-sm">
-                        🍍 {u.pineapple_balance}
+                      <TableCell className="text-sm font-semibold text-gray-900">
+                        {u.pineapple_balance} 🍍
                       </TableCell>
                       <TableCell>
                         {u.is_admin && (
-                          <Badge variant="secondary">Admin</Badge>
+                          <Badge
+                            variant="secondary"
+                            className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px]"
+                          >
+                            Admin
+                          </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm text-gray-500">
                         {formatDistanceToNow(new Date(u.created_at), {
                           addSuffix: true,
                         })}
@@ -313,43 +369,66 @@ export default function AdminPage() {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Projects */}
         <TabsContent value="projects">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900">All Projects</h2>
+            </div>
+            <div className="p-6">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Created</TableHead>
+                  <TableRow className="border-gray-100">
+                    <TableHead className="text-gray-500">Name</TableHead>
+                    <TableHead className="text-gray-500">Owner</TableHead>
+                    <TableHead className="text-gray-500">Status</TableHead>
+                    <TableHead className="text-gray-500">Progress</TableHead>
+                    <TableHead className="text-gray-500">Created</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {projects.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="text-sm font-medium">
+                    <TableRow key={p.id} className="border-gray-100">
+                      <TableCell className="text-sm font-semibold text-gray-900">
                         {p.name}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm text-gray-700">
                         {p.profiles?.email || p.owner_id}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{p.status}</Badge>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[11px] ${getStatusBadge(p.status)}`}
+                        >
+                          {p.status}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {p.progress_score}/100
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                p.progress_score <= 25
+                                  ? "bg-red-500"
+                                  : p.progress_score <= 50
+                                  ? "bg-amber-500"
+                                  : p.progress_score <= 75
+                                  ? "bg-emerald-500"
+                                  : "bg-blue-500"
+                              }`}
+                              style={{ width: `${p.progress_score}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-gray-700">
+                            {p.progress_score}%
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm text-gray-500">
                         {formatDistanceToNow(new Date(p.created_at), {
                           addSuffix: true,
                         })}
@@ -358,24 +437,24 @@ export default function AdminPage() {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Analytics */}
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics Events</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900">Analytics Events</h2>
+            </div>
+            <div className="p-6">
               <div className="flex gap-3 mb-4">
                 <div className="flex-1">
                   <Input
                     placeholder="Filter by event name..."
                     value={analyticsFilter}
                     onChange={(e) => setAnalyticsFilter(e.target.value)}
-                    className="h-9 text-sm"
+                    className="h-9 text-sm border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20"
                   />
                 </div>
                 <div>
@@ -383,14 +462,14 @@ export default function AdminPage() {
                     type="date"
                     value={analyticsDateFilter}
                     onChange={(e) => setAnalyticsDateFilter(e.target.value)}
-                    className="h-9 text-sm w-40"
+                    className="h-9 text-sm w-40 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20"
                   />
                 </div>
                 {(analyticsFilter || analyticsDateFilter) && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9"
+                    className="h-9 text-gray-500 hover:text-gray-900"
                     onClick={() => {
                       setAnalyticsFilter("");
                       setAnalyticsDateFilter("");
@@ -402,10 +481,10 @@ export default function AdminPage() {
               </div>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Properties</TableHead>
-                    <TableHead>Time</TableHead>
+                  <TableRow className="border-gray-100">
+                    <TableHead className="text-gray-500">Event</TableHead>
+                    <TableHead className="text-gray-500">Properties</TableHead>
+                    <TableHead className="text-gray-500">Time</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -419,14 +498,14 @@ export default function AdminPage() {
                       return true;
                     })
                     .map((e) => (
-                    <TableRow key={e.id}>
-                      <TableCell className="text-sm font-medium">
+                    <TableRow key={e.id} className="border-gray-100">
+                      <TableCell className="text-sm font-medium text-gray-900">
                         {e.event_name}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
+                      <TableCell className="text-xs text-gray-500 max-w-xs truncate">
                         {JSON.stringify(e.properties)}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm text-gray-500">
                         {formatDistanceToNow(new Date(e.created_at), {
                           addSuffix: true,
                         })}
@@ -440,12 +519,13 @@ export default function AdminPage() {
                   variant="outline"
                   size="sm"
                   onClick={loadMoreAnalytics}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50"
                 >
                   Load More
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
