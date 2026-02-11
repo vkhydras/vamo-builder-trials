@@ -9,15 +9,14 @@ export async function GET(request: Request) {
 
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
-  const origin = forwardedHost
-    ? `${forwardedProto}://${forwardedHost}`
-    : requestUrl.origin;
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (forwardedHost ? `${forwardedProto}://${forwardedHost}` : requestUrl.origin);
 
   if (code) {
     const supabase = createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Sync Google profile data (avatar, name) to profiles table
       const {
         data: { user },
       } = await supabase.auth.getUser();

@@ -30,19 +30,12 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  function getBaseUrl() {
-    if (typeof window !== "undefined") {
-      return window.location.origin;
-    }
-    return process.env.NEXT_PUBLIC_SITE_URL || "";
-  }
-
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${getBaseUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
     if (error) {
