@@ -39,7 +39,7 @@ export function Navbar() {
 
   return (
     <header className="border-b border-gray-100 bg-white/90 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="px-6 sm:px-8 lg:px-12 py-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/projects">
             <Image

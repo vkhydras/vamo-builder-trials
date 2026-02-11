@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 import { formatDistanceToNow } from "date-fns";
 import {
   Rocket,
@@ -91,6 +92,14 @@ export function BusinessPanel({
     void loadData();
   }, [refreshKey, loadData]);
 
+  // Poll every 5 seconds during active session (spec Section 10)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void loadData();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
   async function saveWhy() {
     await supabase
       .from("projects")
@@ -137,6 +146,7 @@ export function BusinessPanel({
         }),
       });
 
+      await trackEvent("link_added", { projectId: project.id, linkType });
       toast.success(`${linkType} linked! Pineapples earned!`);
       setLinkDialogOpen(false);
       setLinkUrl("");
@@ -176,12 +186,12 @@ export function BusinessPanel({
     <div className="h-full overflow-y-auto">
       <div className="p-4 space-y-6">
         {/* Section 1: Valuation Range */}
-        <div>
+        <div className="rounded-xl bg-gray-50/50 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Valuation Range
           </h3>
           {project.valuation_low > 0 || project.valuation_high > 0 ? (
-            <p className="text-xl font-bold">
+            <p className="text-xl font-bold text-gray-900">
               ${project.valuation_low.toLocaleString()} &ndash; ${project.valuation_high.toLocaleString()}
             </p>
           ) : (
@@ -197,10 +207,8 @@ export function BusinessPanel({
           </p>
         </div>
 
-        <hr />
-
         {/* Section 2: Why I Built This */}
-        <div>
+        <div className="rounded-xl bg-gray-50/50 p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Why I Built This
@@ -247,10 +255,8 @@ export function BusinessPanel({
           )}
         </div>
 
-        <hr />
-
         {/* Section 3: Progress Score */}
-        <div>
+        <div className="rounded-xl bg-gray-50/50 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Progress Score
           </h3>
@@ -273,8 +279,8 @@ export function BusinessPanel({
             <div
               className={`h-2 rounded-full transition-all duration-500 ${
                 project.progress_score <= 25 ? "bg-red-500" :
-                project.progress_score <= 50 ? "bg-yellow-500" :
-                project.progress_score <= 75 ? "bg-green-500" :
+                project.progress_score <= 50 ? "bg-amber-500" :
+                project.progress_score <= 75 ? "bg-emerald-500" :
                 "bg-blue-500"
               }`}
               style={{ width: `${project.progress_score}%` }}
@@ -282,10 +288,8 @@ export function BusinessPanel({
           </div>
         </div>
 
-        <hr />
-
         {/* Section 4: Traction Signals */}
-        <div>
+        <div className="rounded-xl bg-gray-50/50 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Traction Signals
           </h3>
@@ -297,6 +301,12 @@ export function BusinessPanel({
             <div className="space-y-2">
               {tractionSignals.map((signal) => (
                 <div key={signal.id} className="flex items-start gap-2.5 py-1.5">
+                  <span className={`mt-1.5 shrink-0 h-2 w-2 rounded-full ${
+                    signal.event_type === "feature_shipped" ? "bg-blue-500" :
+                    signal.event_type === "customer_added" ? "bg-green-500" :
+                    signal.event_type === "revenue_logged" ? "bg-purple-500" :
+                    "bg-gray-400"
+                  }`} />
                   <div className="mt-0.5 shrink-0 text-muted-foreground">
                     {getEventIcon(signal.event_type)}
                   </div>
@@ -312,10 +322,8 @@ export function BusinessPanel({
           )}
         </div>
 
-        <hr />
-
         {/* Section 5: Linked Assets */}
-        <div>
+        <div className="rounded-xl bg-gray-50/50 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Linked Assets
           </h3>
@@ -354,10 +362,8 @@ export function BusinessPanel({
           </div>
         </div>
 
-        <hr />
-
         {/* Section 6: Mini Activity Timeline */}
-        <div>
+        <div className="rounded-xl bg-gray-50/50 p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Activity Timeline
@@ -373,9 +379,9 @@ export function BusinessPanel({
               No activity yet. Start chatting to log progress!
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 stagger-children">
               {events.map((event) => (
-                <div key={event.id} className="flex items-start gap-2.5 py-1">
+                <div key={event.id} className="flex items-start gap-2.5 py-1 animate-fade-in-up">
                   <div className="mt-0.5 shrink-0 text-muted-foreground">
                     {getEventIcon(event.event_type)}
                   </div>

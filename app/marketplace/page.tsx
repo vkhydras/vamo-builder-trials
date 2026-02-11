@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -13,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 import { trackEvent } from "@/lib/analytics";
-import { Store, TrendingUp, DollarSign } from "lucide-react";
+import { Store, Rocket } from "lucide-react";
 
 interface ListingWithProject {
   id: string;
@@ -82,18 +84,31 @@ export default function MarketplacePage() {
               ))}
             </div>
           ) : listings.length === 0 ? (
-            <div className="text-center py-20 rounded-2xl border border-dashed border-gray-200">
-              <Store className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">
-                No listings available yet. Be the first to list!
-              </p>
+            <div className="text-center py-24 rounded-2xl border border-dashed border-gray-200 bg-dot-grid relative">
+              <div className="relative z-10">
+                <div className="mx-auto mb-5 h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center">
+                  <Store className="h-8 w-8 text-emerald-400" />
+                </div>
+                <p className="text-gray-600 font-medium mb-2 text-lg">
+                  The marketplace is empty for now
+                </p>
+                <p className="text-sm text-gray-400 mb-6 max-w-sm mx-auto">
+                  Build a project and be the first to list!
+                </p>
+                <Link href="/projects/new">
+                  <Button className="bg-gray-900 hover:bg-gray-800 text-white font-medium">
+                    <Rocket className="h-4 w-4 mr-2" />
+                    Start a Project
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 stagger-children">
               {listings.map((listing) => (
                 <div
                   key={listing.id}
-                  className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
+                  className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group"
                   onClick={() => setSelected(listing)}
                 >
                   {listing.screenshots && listing.screenshots.length > 0 && (
@@ -166,12 +181,9 @@ export default function MarketplacePage() {
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-xl bg-gray-50 p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="h-3.5 w-3.5 text-gray-400" />
-                        <p className="text-[11px] text-gray-400 uppercase tracking-wider">
-                          Asking Price
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">
+                        Asking Price
+                      </p>
                       <p className="font-bold text-gray-900">
                         {selected.asking_price_low != null &&
                         selected.asking_price_high != null
@@ -180,12 +192,9 @@ export default function MarketplacePage() {
                       </p>
                     </div>
                     <div className="rounded-xl bg-gray-50 p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="h-3.5 w-3.5 text-gray-400" />
-                        <p className="text-[11px] text-gray-400 uppercase tracking-wider">
-                          Progress
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">
+                        Progress
+                      </p>
                       <p className="font-bold text-gray-900">
                         {selected.projects?.progress_score || 0}/100
                       </p>

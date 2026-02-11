@@ -27,10 +27,11 @@ import {
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { trackEvent } from "@/lib/analytics";
+import { History, Gift } from "lucide-react";
 
 export default function WalletPage() {
   const { profile, refreshProfile } = useUser();
-  const [ledger, setLedger] = useState<RewardLedgerEntry[]>([]);
+  const [ledger, setLedger] = useState<(RewardLedgerEntry & { projects?: { name: string } | null })[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function WalletPage() {
       const [ledgerRes, redemptionRes] = await Promise.all([
         supabase
           .from("reward_ledger")
-          .select("*")
+          .select("*, projects(name)")
           .order("created_at", { ascending: false })
           .range(0, 19),
         supabase
@@ -69,7 +70,7 @@ export default function WalletPage() {
     const from = nextPage * 20;
     const { data } = await supabase
       .from("reward_ledger")
-      .select("*")
+      .select("*, projects(name)")
       .order("created_at", { ascending: false })
       .range(from, from + 19);
 
@@ -113,7 +114,7 @@ export default function WalletPage() {
       const [ledgerRes, redemptionRes] = await Promise.all([
         supabase
           .from("reward_ledger")
-          .select("*")
+          .select("*, projects(name)")
           .order("created_at", { ascending: false })
           .range(0, 19),
         supabase
@@ -178,10 +179,10 @@ export default function WalletPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Balance Card */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 flex items-center justify-between">
+      <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 sm:p-8 flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">Pineapple Balance</p>
-          <p className="text-4xl font-black text-gray-900 mt-1">
+          <p className="text-sm text-gray-400">Pineapple Balance</p>
+          <p className="text-4xl font-black text-white mt-1">
             🍍 {profile?.pineapple_balance ?? 0}
           </p>
         </div>
@@ -189,7 +190,7 @@ export default function WalletPage() {
           size="lg"
           onClick={() => setRedeemOpen(true)}
           disabled={(profile?.pineapple_balance || 0) < 50}
-          className="bg-gray-900 hover:bg-gray-800 text-white font-medium"
+          className="bg-white hover:bg-gray-100 text-gray-900 font-medium"
         >
           Redeem
         </Button>
@@ -200,57 +201,106 @@ export default function WalletPage() {
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Reward History</h2>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {ledger.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="text-3xl mb-2">🍍</div>
+            <div className="rounded-xl border-2 border-dashed border-gray-200 py-14 flex flex-col items-center justify-center">
+              <History className="h-8 w-8 text-gray-300 mb-3" />
               <p className="text-sm text-gray-500">
                 No rewards yet. Start building to earn pineapples!
               </p>
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-100">
-                    <TableHead className="text-gray-500">Date</TableHead>
-                    <TableHead className="text-gray-500">Event</TableHead>
-                    <TableHead className="text-right text-gray-500">
-                      Amount
-                    </TableHead>
-                    <TableHead className="text-right text-gray-500">
-                      Balance
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ledger.map((entry) => (
-                    <TableRow key={entry.id} className="border-gray-100">
-                      <TableCell className="text-sm text-gray-500">
-                        {formatDistanceToNow(new Date(entry.created_at), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-sm capitalize text-gray-700">
-                        {entry.event_type.replace(/_/g, " ")}
-                      </TableCell>
-                      <TableCell
-                        className={`text-right text-sm font-semibold ${
-                          entry.reward_amount > 0
-                            ? "text-emerald-600"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {entry.reward_amount > 0 ? "+" : ""}
-                        {entry.reward_amount} 🍍
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-gray-700">
-                        {entry.balance_after}
-                      </TableCell>
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-gray-100">
+                      <TableHead className="text-gray-500">Date</TableHead>
+                      <TableHead className="text-gray-500">Event</TableHead>
+                      <TableHead className="text-gray-500">Project</TableHead>
+                      <TableHead className="text-right text-gray-500">
+                        Amount
+                      </TableHead>
+                      <TableHead className="text-right text-gray-500">
+                        Balance
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {ledger.map((entry) => (
+                      <TableRow key={entry.id} className="border-gray-100">
+                        <TableCell className="text-sm text-gray-500">
+                          {formatDistanceToNow(new Date(entry.created_at), {
+                            addSuffix: true,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-sm capitalize text-gray-700">
+                          {entry.event_type.replace(/_/g, " ")}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-500">
+                          {entry.projects?.name || "\u2014"}
+                        </TableCell>
+                        <TableCell
+                          className={`text-right text-sm font-semibold ${
+                            entry.reward_amount > 0
+                              ? "text-emerald-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {entry.reward_amount > 0 ? "+" : ""}
+                          {entry.reward_amount} 🍍
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-gray-700">
+                          {entry.balance_after}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile card layout */}
+              <div className="md:hidden space-y-3 stagger-children">
+                {ledger.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 capitalize">
+                      {entry.event_type.replace(/_/g, " ")}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-700 truncate">
+                          {entry.projects?.name || "\u2014"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {formatDistanceToNow(new Date(entry.created_at), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0 pl-4">
+                        <p
+                          className={`text-sm font-semibold ${
+                            entry.reward_amount > 0
+                              ? "text-emerald-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {entry.reward_amount > 0 ? "+" : ""}
+                          {entry.reward_amount} 🍍
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          bal {entry.balance_after}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {hasMoreLedger && (
                 <div className="text-center mt-4">
                   <Button
@@ -273,40 +323,75 @@ export default function WalletPage() {
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Redemption History</h2>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {redemptions.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-10">
-              No redemptions yet.
-            </p>
+            <div className="rounded-xl border-2 border-dashed border-gray-200 py-14 flex flex-col items-center justify-center">
+              <Gift className="h-8 w-8 text-gray-300 mb-3" />
+              <p className="text-sm text-gray-500">
+                No redemptions yet.
+              </p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-100">
-                  <TableHead className="text-gray-500">Date</TableHead>
-                  <TableHead className="text-gray-500">Amount</TableHead>
-                  <TableHead className="text-gray-500">Reward Type</TableHead>
-                  <TableHead className="text-gray-500">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-gray-100">
+                      <TableHead className="text-gray-500">Date</TableHead>
+                      <TableHead className="text-gray-500">Amount</TableHead>
+                      <TableHead className="text-gray-500">Reward Type</TableHead>
+                      <TableHead className="text-gray-500">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {redemptions.map((r) => (
+                      <TableRow key={r.id} className="border-gray-100">
+                        <TableCell className="text-sm text-gray-500">
+                          {formatDistanceToNow(new Date(r.created_at), {
+                            addSuffix: true,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-sm font-semibold text-gray-900">
+                          {r.amount} 🍍
+                        </TableCell>
+                        <TableCell className="text-sm capitalize text-gray-700">
+                          {r.reward_type.replace(/_/g, " ")}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(r.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile card layout */}
+              <div className="md:hidden space-y-3 stagger-children">
                 {redemptions.map((r) => (
-                  <TableRow key={r.id} className="border-gray-100">
-                    <TableCell className="text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(r.created_at), {
-                        addSuffix: true,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-sm font-semibold text-gray-900">
-                      {r.amount} 🍍
-                    </TableCell>
-                    <TableCell className="text-sm capitalize text-gray-700">
-                      {r.reward_type.replace(/_/g, " ")}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(r.status)}</TableCell>
-                  </TableRow>
+                  <div
+                    key={r.id}
+                    className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {r.amount} 🍍
+                      </p>
+                      {getStatusBadge(r.status)}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm capitalize text-gray-700">
+                        {r.reward_type.replace(/_/g, " ")}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {formatDistanceToNow(new Date(r.created_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </div>
       </div>

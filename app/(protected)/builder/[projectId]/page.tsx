@@ -56,6 +56,8 @@ export default function BuilderPage() {
   const [listingDesc, setListingDesc] = useState("");
   const [listingPriceLow, setListingPriceLow] = useState("");
   const [listingPriceHigh, setListingPriceHigh] = useState("");
+  const [listingScreenshot, setListingScreenshot] = useState("");
+  const [listingDescLoading, setListingDescLoading] = useState(false);
   const [listingSubmitting, setListingSubmitting] = useState(false);
 
   // Offer dialog
@@ -145,6 +147,25 @@ export default function BuilderPage() {
     }
   }
 
+  async function generateListingDesc() {
+    setListingDescLoading(true);
+    try {
+      const res = await fetch("/api/listing-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.description) setListingDesc(data.description);
+      }
+    } catch {
+      // Silently fail — user can type their own
+    } finally {
+      setListingDescLoading(false);
+    }
+  }
+
   async function handleCreateListing() {
     if (!project || !listingTitle.trim()) return;
     setListingSubmitting(true);
@@ -165,6 +186,10 @@ export default function BuilderPage() {
       .select("id", { count: "exact", head: true })
       .eq("project_id", project.id);
 
+    const screenshots = listingScreenshot.trim()
+      ? [listingScreenshot.trim()]
+      : [];
+
     const { error } = await supabase.from("listings").insert({
       project_id: project.id,
       user_id: user.id,
@@ -173,6 +198,7 @@ export default function BuilderPage() {
       asking_price_low: parseInt(listingPriceLow) || project.valuation_low,
       asking_price_high: parseInt(listingPriceHigh) || project.valuation_high,
       timeline_snapshot: timeline,
+      screenshots,
       metrics: {
         progress_score: project.progress_score,
         total_prompts: messageCount || 0,
@@ -212,28 +238,66 @@ export default function BuilderPage() {
 
   if (loading || !project) {
     return (
-      <div className="h-screen flex flex-col">
-        <div className="h-14 border-b flex items-center px-4 gap-4">
-          <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-8 w-48" />
-          <div className="ml-auto">
-            <Skeleton className="h-8 w-24" />
+      <div className="h-screen flex flex-col bg-background">
+        {/* Header skeleton */}
+        <div className="h-14 border-b border-gray-100 flex items-center px-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-5 w-12" />
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Skeleton className="h-8 w-28 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
           </div>
         </div>
-        <div className="flex-1 flex">
-          <div className="w-[300px] border-r p-4 space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex gap-2">
-                <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-                <div className="space-y-1 flex-1">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
+
+        {/* 3-panel skeleton */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Chat panel skeleton */}
+          <div className="w-[300px] border-r border-gray-200/60 bg-white p-4 flex flex-col">
+            <div className="space-y-4 flex-1">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className={`flex gap-2 ${i % 2 === 1 ? "justify-end" : ""}`}>
+                  {i % 2 === 0 && <Skeleton className="h-7 w-7 rounded-full shrink-0" />}
+                  <div className={`space-y-1.5 ${i % 2 === 1 ? "items-end" : ""}`} style={{ maxWidth: "75%" }}>
+                    <Skeleton className="h-4" style={{ width: `${60 + (i * 13) % 40}%` }} />
+                    <Skeleton className="h-4" style={{ width: `${40 + (i * 17) % 35}%` }} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="mt-auto pt-3 border-t">
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
           </div>
-          <div className="flex-1 p-4">
-            <Skeleton className="h-full w-full rounded-lg" />
+
+          {/* Center preview skeleton */}
+          <div className="flex-1 bg-gray-50/30 p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <Skeleton className="flex-1 w-full rounded-lg" />
+          </div>
+
+          {/* Business panel skeleton */}
+          <div className="w-[360px] border-l border-gray-200/60 bg-white p-4 space-y-4 hidden xl:block">
+            <Skeleton className="h-5 w-24" />
+            <div className="grid grid-cols-2 gap-3">
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+            </div>
+            <Skeleton className="h-5 w-20 mt-4" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
           </div>
         </div>
       </div>
@@ -241,94 +305,103 @@ export default function BuilderPage() {
   }
 
   const headerContent = (
-    <header className="h-14 border-b border-gray-100 flex items-center px-4 gap-3 bg-white/90 backdrop-blur-md shrink-0">
-      <Link href="/projects" className="flex items-center gap-2 shrink-0">
-        <Image src="/logo.svg" alt="Vamo" width={64} height={16} />
-      </Link>
+    <header className="h-14 border-b border-gray-100 flex items-center px-4 bg-white/90 backdrop-blur-md shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative z-10">
+      {/* Left group: Logo + Pineapple balance */}
+      <div className="flex items-center gap-3 shrink-0">
+        <Link href="/projects" className="flex items-center gap-2 shrink-0">
+          <Image src="/logo.svg" alt="Vamo" width={64} height={16} />
+        </Link>
 
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-sm">🍍</span>
-        <span className="text-sm font-semibold">{profile?.pineapple_balance ?? 0}</span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-sm">🍍</span>
+          <span className="text-sm font-semibold">{profile?.pineapple_balance ?? 0}</span>
+        </div>
       </div>
 
-      <div className="flex-1" />
-
-      {/* Project name (editable) */}
-      {editingName ? (
-        <div className="flex items-center gap-1.5">
-          <Input
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            className="h-8 text-sm w-40"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveName();
-              if (e.key === "Escape") {
+      {/* Center group: Project name (absolute centered) */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+        {editingName ? (
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              className="h-8 text-sm w-40"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveName();
+                if (e.key === "Escape") {
+                  setEditingName(false);
+                  setNameInput(project.name);
+                }
+              }}
+            />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveName}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => {
                 setEditingName(false);
                 setNameInput(project.name);
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 max-w-[200px] truncate"
+            onClick={() => setEditingName(true)}
+          >
+            {project.name}
+            <Pencil className="h-3 w-3 opacity-50 shrink-0" />
+          </button>
+        )}
+
+        {/* Platform badge */}
+        {project.url && (
+          <Badge variant="outline" className="text-xs shrink-0 ml-1">
+            <ExternalLink className="h-3 w-3 mr-1" />
+            {(() => {
+              try {
+                return new URL(project.url).hostname.replace("www.", "").split(".")[0];
+              } catch {
+                return "Link";
               }
-            }}
-          />
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveName}>
-            <Check className="h-3.5 w-3.5" />
+            })()}
+          </Badge>
+        )}
+      </div>
+
+      {/* Right group: Action buttons */}
+      <div className="flex items-center gap-2 ml-auto shrink-0">
+        {project.progress_score >= 10 && (
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleGetOffer}>
+            <DollarSign className="h-3 w-3 mr-1" />
+            Get Vamo Offer
           </Button>
+        )}
+
+        {project.progress_score >= 20 && (
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
+            size="sm"
+            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
             onClick={() => {
-              setEditingName(false);
-              setNameInput(project.name);
+              setListingTitle(project.name);
+              setListingDesc("");
+              setListingPriceLow(project.valuation_low.toString());
+              setListingPriceHigh(project.valuation_high.toString());
+              setListingScreenshot(project.screenshot_url || "");
+              setListingOpen(true);
+              generateListingDesc();
             }}
           >
-            <X className="h-3.5 w-3.5" />
+            List for Sale
           </Button>
-        </div>
-      ) : (
-        <button
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 max-w-[150px] truncate"
-          onClick={() => setEditingName(true)}
-        >
-          {project.name}
-          <Pencil className="h-3 w-3 opacity-50 shrink-0" />
-        </button>
-      )}
-
-      {/* Platform badge */}
-      {project.url && (
-        <Badge variant="outline" className="text-xs shrink-0">
-          <ExternalLink className="h-3 w-3 mr-1" />
-          {(() => {
-            try {
-              return new URL(project.url).hostname.replace("www.", "").split(".")[0];
-            } catch {
-              return "Link";
-            }
-          })()}
-        </Badge>
-      )}
-
-      {project.progress_score >= 10 && (
-        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleGetOffer}>
-          <DollarSign className="h-3 w-3 mr-1" />
-          Get Vamo Offer
-        </Button>
-      )}
-
-      {project.progress_score >= 20 && (
-        <Button
-          size="sm"
-          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-          onClick={() => {
-            setListingTitle(project.name);
-            setListingPriceLow(project.valuation_low.toString());
-            setListingPriceHigh(project.valuation_high.toString());
-            setListingOpen(true);
-          }}
-        >
-          List for Sale
-        </Button>
-      )}
+        )}
+      </div>
     </header>
   );
 
@@ -339,12 +412,12 @@ export default function BuilderPage() {
       {/* Desktop (≥1280px): All three panels side by side */}
       <div className="flex-1 hidden xl:flex overflow-hidden">
         {/* Left: Chat ~300px */}
-        <div className="w-[300px] border-r flex flex-col overflow-hidden shrink-0">
+        <div className="w-[300px] border-r border-gray-200/60 flex flex-col overflow-hidden shrink-0 bg-white">
           <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
         </div>
 
         {/* Center: UI Preview — flexible */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r">
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200/60 bg-gray-50/30">
           <UIPreview
             project={project}
             onOpenSettings={() => {
@@ -355,7 +428,7 @@ export default function BuilderPage() {
         </div>
 
         {/* Right: Business Panel ~360px */}
-        <div className="w-[360px] flex flex-col overflow-hidden shrink-0">
+        <div className="w-[360px] flex flex-col overflow-hidden shrink-0 bg-white">
           <BusinessPanel
             project={project}
             refreshKey={refreshKey}
@@ -368,7 +441,7 @@ export default function BuilderPage() {
       {/* Tablet (768-1279px): Chat as Sheet, Center+Right visible */}
       <div className="flex-1 hidden md:flex xl:hidden overflow-hidden">
         {/* Center: UI Preview — flexible */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r">
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200/60 bg-gray-50/30">
           <UIPreview
             project={project}
             onOpenSettings={() => {
@@ -379,7 +452,7 @@ export default function BuilderPage() {
         </div>
 
         {/* Right: Business Panel ~360px */}
-        <div className="w-[360px] flex flex-col overflow-hidden shrink-0">
+        <div className="w-[360px] flex flex-col overflow-hidden shrink-0 bg-white">
           <BusinessPanel
             project={project}
             refreshKey={refreshKey}
@@ -409,15 +482,24 @@ export default function BuilderPage() {
       {/* Mobile (<768px): Tab-based navigation */}
       <div className="flex-1 md:hidden overflow-hidden">
         <Tabs defaultValue="chat" className="flex flex-col h-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-none border-b">
-            <TabsTrigger value="chat" className="text-xs">
+          <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-white h-11">
+            <TabsTrigger
+              value="chat"
+              className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 data-[state=active]:font-semibold data-[state=active]:shadow-none transition-colors"
+            >
               <MessageSquare className="h-3.5 w-3.5 mr-1" />
               Chat
             </TabsTrigger>
-            <TabsTrigger value="preview" className="text-xs">
+            <TabsTrigger
+              value="preview"
+              className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 data-[state=active]:font-semibold data-[state=active]:shadow-none transition-colors"
+            >
               Preview
             </TabsTrigger>
-            <TabsTrigger value="business" className="text-xs">
+            <TabsTrigger
+              value="business"
+              className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 data-[state=active]:font-semibold data-[state=active]:shadow-none transition-colors"
+            >
               Business
             </TabsTrigger>
           </TabsList>
@@ -521,9 +603,12 @@ export default function BuilderPage() {
                   onClick={() => {
                     setOfferOpen(false);
                     setListingTitle(project.name);
+                    setListingDesc("");
                     setListingPriceLow(offerData.offer.offer_low.toString());
                     setListingPriceHigh(offerData.offer.offer_high.toString());
+                    setListingScreenshot(project.screenshot_url || "");
                     setListingOpen(true);
+                    generateListingDesc();
                   }}
                 >
                   List for Sale
@@ -571,9 +656,14 @@ export default function BuilderPage() {
               <Textarea
                 value={listingDesc}
                 onChange={(e) => setListingDesc(e.target.value)}
-                placeholder="Describe what makes this project valuable..."
+                placeholder={listingDescLoading ? "Generating AI description..." : "Describe what makes this project valuable..."}
                 rows={3}
+                disabled={listingDescLoading}
+                className={listingDescLoading ? "animate-pulse" : ""}
               />
+              {listingDescLoading && (
+                <p className="text-xs text-muted-foreground">AI is generating a description...</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -592,6 +682,17 @@ export default function BuilderPage() {
                   onChange={(e) => setListingPriceHigh(e.target.value)}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Screenshot URL</Label>
+              <Input
+                placeholder="https://example.com/screenshot.png"
+                value={listingScreenshot}
+                onChange={(e) => setListingScreenshot(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Add a screenshot URL to showcase your project
+              </p>
             </div>
             <Button
               className="w-full bg-emerald-600 hover:bg-emerald-700"

@@ -20,6 +20,12 @@ import { formatDistanceToNow } from "date-fns";
 import { trackEvent } from "@/lib/analytics";
 import type { Profile, Project, Redemption } from "@/lib/types";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Users,
   FolderOpen,
   MessageSquare,
@@ -55,6 +61,10 @@ export default function AdminPage() {
   const [analyticsPage, setAnalyticsPage] = useState(0);
   const [analyticsFilter, setAnalyticsFilter] = useState("");
   const [analyticsDateFilter, setAnalyticsDateFilter] = useState("");
+  const [selectedUser, setSelectedUser] = useState<(Profile & { project_count?: number }) | null>(null);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [userActivity, setUserActivity] = useState<{ id: string; event_type: string; description: string | null; created_at: string }[]>([]);
+  const [userDetailLoading, setUserDetailLoading] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -101,7 +111,19 @@ export default function AdminPage() {
           .eq("status", "active"),
       ]);
 
-      setUsers((usersRes.data as typeof users) || []);
+      // Count projects per user
+      const projectsByOwner: Record<string, number> = {};
+      (projectsRes.data || []).forEach((p) => {
+        const ownerId = (p as { owner_id: string }).owner_id;
+        projectsByOwner[ownerId] = (projectsByOwner[ownerId] || 0) + 1;
+      });
+
+      setUsers(
+        ((usersRes.data || []) as typeof users).map((u) => ({
+          ...u,
+          project_count: projectsByOwner[u.id] || 0,
+        }))
+      );
       setProjects((projectsRes.data as typeof projects) || []);
       setPendingRedemptions((redemptionsRes.data as typeof pendingRedemptions) || []);
       setAnalyticsEvents((analyticsRes.data as AnalyticsEvent[]) || []);
@@ -147,6 +169,29 @@ export default function AdminPage() {
 
     setPendingRedemptions((prev) => prev.filter((r) => r.id !== id));
     toast.success(`Redemption marked as ${status}`);
+  }
+
+  async function viewUserDetail(user: Profile & { project_count?: number }) {
+    setSelectedUser(user);
+    setUserDetailLoading(true);
+
+    const [projectsRes, activityRes] = await Promise.all([
+      supabase
+        .from("projects")
+        .select("*")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("activity_events")
+        .select("id, event_type, description, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    setUserProjects((projectsRes.data as Project[]) || []);
+    setUserActivity(activityRes.data || []);
+    setUserDetailLoading(false);
   }
 
   async function loadMoreAnalytics() {
@@ -336,19 +381,27 @@ export default function AdminPage() {
                     <TableHead className="text-gray-500">Email</TableHead>
                     <TableHead className="text-gray-500">Name</TableHead>
                     <TableHead className="text-gray-500">Pineapples</TableHead>
+                    <TableHead className="text-gray-500">Projects</TableHead>
                     <TableHead className="text-gray-500">Admin</TableHead>
                     <TableHead className="text-gray-500">Joined</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
-                    <TableRow key={u.id} className="border-gray-100">
+                    <TableRow
+                      key={u.id}
+                      className="border-gray-100 cursor-pointer hover:bg-gray-50"
+                      onClick={() => viewUserDetail(u)}
+                    >
                       <TableCell className="text-sm text-gray-700">{u.email}</TableCell>
                       <TableCell className="text-sm text-gray-700">
                         {u.full_name || "—"}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-gray-900">
                         {u.pineapple_balance} 🍍
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-700">
+                        {u.project_count || 0}
                       </TableCell>
                       <TableCell>
                         {u.is_admin && (
@@ -528,6 +581,93 @@ export default function AdminPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* User Detail Dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-lg border-gray-200">
+          <DialogHeader>
+            <DialogTitle className="font-bold text-gray-900">
+              {selectedUser?.full_name || selectedUser?.email}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-gray-50 p-3 text-center">
+                  <p className="text-xs text-gray-400">Pineapples</p>
+                  <p className="text-lg font-bold text-gray-900">{selectedUser.pineapple_balance} 🍍</p>
+                </div>
+                <div className="rounded-xl bg-gray-50 p-3 text-center">
+                  <p className="text-xs text-gray-400">Projects</p>
+                  <p className="text-lg font-bold text-gray-900">{selectedUser.project_count || 0}</p>
+                </div>
+                <div className="rounded-xl bg-gray-50 p-3 text-center">
+                  <p className="text-xs text-gray-400">Joined</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {formatDistanceToNow(new Date(selectedUser.created_at), { addSuffix: true })}
+                  </p>
+                </div>
+              </div>
+
+              {userDetailLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ) : (
+                <>
+                  {userProjects.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">Projects</p>
+                      <div className="space-y-2">
+                        {userProjects.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{p.name}</p>
+                              <p className="text-xs text-gray-400">{p.status} &middot; {p.progress_score}%</p>
+                            </div>
+                            <Badge variant="secondary" className={`text-[11px] ${getStatusBadge(p.status)}`}>
+                              {p.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {userActivity.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">Recent Activity</p>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {userActivity.map((a) => (
+                          <div key={a.id} className="flex items-center justify-between py-1">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-gray-700 truncate">
+                                <span className="font-medium capitalize">{a.event_type.replace(/_/g, " ")}</span>
+                                {a.description && ` — ${a.description}`}
+                              </p>
+                            </div>
+                            <span className="text-[10px] text-gray-400 ml-2 shrink-0">
+                              {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {userProjects.length === 0 && userActivity.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No projects or activity yet.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

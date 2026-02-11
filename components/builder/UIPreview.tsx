@@ -10,6 +10,7 @@ import {
   Monitor,
   Tablet,
   Smartphone,
+  ArrowUp,
 } from "lucide-react";
 
 interface UIPreviewProps {
@@ -68,28 +69,33 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
               </Button>
             </a>
           )}
+          {project.url && (
+            <span className="font-mono text-[11px] text-gray-400 truncate max-w-[200px]">
+              {project.url}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <Button
-            variant={device === "desktop" ? "secondary" : "ghost"}
+            variant={device === "desktop" ? "default" : "ghost"}
             size="icon"
-            className="h-8 w-8"
+            className={`h-8 w-8 ${device === "desktop" ? "bg-gray-900 text-white hover:bg-gray-800" : ""}`}
             onClick={() => setDevice("desktop")}
           >
             <Monitor className="h-3.5 w-3.5" />
           </Button>
           <Button
-            variant={device === "tablet" ? "secondary" : "ghost"}
+            variant={device === "tablet" ? "default" : "ghost"}
             size="icon"
-            className="h-8 w-8"
+            className={`h-8 w-8 ${device === "tablet" ? "bg-gray-900 text-white hover:bg-gray-800" : ""}`}
             onClick={() => setDevice("tablet")}
           >
             <Tablet className="h-3.5 w-3.5" />
           </Button>
           <Button
-            variant={device === "mobile" ? "secondary" : "ghost"}
+            variant={device === "mobile" ? "default" : "ghost"}
             size="icon"
-            className="h-8 w-8"
+            className={`h-8 w-8 ${device === "mobile" ? "bg-gray-900 text-white hover:bg-gray-800" : ""}`}
             onClick={() => setDevice("mobile")}
           >
             <Smartphone className="h-3.5 w-3.5" />
@@ -171,10 +177,37 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-muted-foreground mb-3">
-              Link a project URL to see a live preview
+          <div className="flex flex-col items-center justify-center h-full text-center bg-dot-grid rounded-xl">
+            {/* Browser wireframe illustration */}
+            <div className="w-64 mb-6">
+              <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                {/* Title bar */}
+                <div className="flex items-center gap-1.5 px-3 py-2 border-b border-gray-100 bg-gray-50/80">
+                  <div className="h-2 w-2 rounded-full bg-red-300" />
+                  <div className="h-2 w-2 rounded-full bg-yellow-300" />
+                  <div className="h-2 w-2 rounded-full bg-green-300" />
+                  <div className="flex-1 mx-2 h-3 bg-gray-100 rounded-sm" />
+                </div>
+                {/* Content skeleton */}
+                <div className="p-4 space-y-3">
+                  <div className="h-3 bg-gray-100 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-full" />
+                  <div className="h-3 bg-gray-100 rounded w-5/6" />
+                  <div className="h-8 bg-gray-50 rounded mt-4" />
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="h-12 bg-gray-50 rounded" />
+                    <div className="h-12 bg-gray-50 rounded" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-muted-foreground mb-1 font-medium">
+              Link your project to see it live
             </p>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
+              <ArrowUp className="h-3 w-3" />
+              <span>Add a URL to get started</span>
+            </div>
             <Button variant="outline" size="sm" onClick={onOpenSettings}>
               Add Project URL
             </Button>

@@ -1,4 +1,4 @@
-# >>>VAMO — Build & Grow Your Startup
+# VAMO — Build & Grow Your Startup
 
 Vamo is a Lovable-style builder where non-technical founders iterate on their startup UI and business progress in parallel. Instead of toggling between UI and code, users toggle between:
 
@@ -118,7 +118,7 @@ Visit `http://localhost:3000`
 | `/signup` | Signup page | No |
 | `/projects` | Project list | Yes |
 | `/projects/new` | Create project | Yes |
-| `/builder/[id]` | 2-panel workspace with tabs | Yes |
+| `/builder/[id]` | 3-panel builder workspace | Yes |
 | `/wallet` | Pineapple wallet & redemptions | Yes |
 | `/marketplace` | Public marketplace listings | No |
 | `/admin` | Admin dashboard | Yes (admin only) |
@@ -151,13 +151,14 @@ Visit `http://localhost:3000`
 
 ### Builder Workspace
 
-The workspace uses a 2-panel layout matching the reference design:
-- **Left panel:** Builder Chat for logging progress updates
-- **Right panel:** Tabbed content area switching between "Project" (UI Preview) and "Business Analysis"
-- **Business Analysis** has sub-navigation: Analysis, Profile, Activity, Collaborators
+The workspace uses a 3-panel layout mirroring Lovable's builder interface:
+- **Left panel (~300px):** Builder Chat for logging progress updates
+- **Center panel (flexible):** UI Preview with iframe, device toggle, and fallback states
+- **Right panel (~360px):** Business Panel with valuation, progress score, traction signals, linked assets, and activity timeline
 
 **Responsive behavior:**
-- **Desktop (>=768px):** Chat + tabbed content side by side
+- **Desktop (≥1280px):** All three panels visible side by side
+- **Tablet (768–1279px):** Center + Right panels visible; Chat slides out from a floating button (Sheet)
 - **Mobile (<768px):** Tab-based navigation between Chat, Preview, and Business
 
 ## Deployment
@@ -168,9 +169,9 @@ vercel deploy
 
 Set environment variables in the Vercel dashboard before deploying.
 
-## Known Limitations
+## Limitations
 
 - Redemption fulfillment is manual (admin marks as fulfilled in admin panel)
 - Screenshot upload for listings uses URL input rather than file upload
 - Google OAuth requires configuring the Google provider in Supabase Authentication settings
-- Revenue, Multiple, Awards, Charts metrics are placeholder ("???") until more data collection is implemented
+- AI-generated listing descriptions are best-effort and may need manual editing
