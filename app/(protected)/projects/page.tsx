@@ -7,6 +7,7 @@ import type { Project } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 import { Plus, ArrowRight, Rocket } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
@@ -82,18 +83,18 @@ export default function ProjectsPage() {
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <div
+            <Card
               key={i}
-              className="rounded-2xl border border-gray-200 p-6 space-y-3"
+              className="rounded-2xl border border-gray-200 p-6 space-y-3 gap-0 shadow-none"
             >
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-4 w-48" />
               <Skeleton className="h-2 w-full rounded-full" />
-            </div>
+            </Card>
           ))}
         </div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-dot-grid relative">
+        <Card className="text-center py-20 rounded-2xl border border-dashed border-gray-200 bg-dot-grid relative gap-0 shadow-none">
           <div className="relative z-10">
             <div className="text-5xl mb-4">🍍</div>
             <p className="text-gray-600 font-medium mb-2">
@@ -109,12 +110,12 @@ export default function ProjectsPage() {
               </Button>
             </Link>
           </div>
-        </div>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 stagger-children">
           {projects.map((project) => (
             <Link key={project.id} href={`/builder/${project.id}`}>
-              <div className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full bg-white group">
+              <Card className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full bg-white group gap-0 shadow-none">
                 <div
                   className="h-1"
                   style={{ background: getProgressGradient(project.progress_score) }}
@@ -166,7 +167,7 @@ export default function ProjectsPage() {
                   <ArrowRight className="h-3 w-3 ml-1" />
                 </div>
                 </div>
-              </div>
+              </Card>
             </Link>
           ))}
         </div>

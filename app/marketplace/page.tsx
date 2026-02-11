@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -73,18 +74,18 @@ export default function MarketplacePage() {
           {loading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
-                <div
+                <Card
                   key={i}
-                  className="rounded-2xl border border-gray-200 p-6 space-y-3"
+                  className="rounded-2xl border border-gray-200 p-6 space-y-3 gap-0 shadow-none"
                 >
                   <Skeleton className="h-5 w-32" />
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-3/4" />
-                </div>
+                </Card>
               ))}
             </div>
           ) : listings.length === 0 ? (
-            <div className="text-center py-24 rounded-2xl border border-dashed border-gray-200 bg-dot-grid relative">
+            <Card className="text-center py-24 rounded-2xl border border-dashed border-gray-200 bg-dot-grid relative gap-0 shadow-none">
               <div className="relative z-10">
                 <div className="mx-auto mb-5 h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center">
                   <Store className="h-8 w-8 text-emerald-400" />
@@ -102,13 +103,13 @@ export default function MarketplacePage() {
                   </Button>
                 </Link>
               </div>
-            </div>
+            </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 stagger-children">
               {listings.map((listing) => (
-                <div
+                <Card
                   key={listing.id}
-                  className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group"
+                  className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group gap-0 shadow-none"
                   onClick={() => setSelected(listing)}
                 >
                   {listing.screenshots && listing.screenshots.length > 0 && (
@@ -156,7 +157,7 @@ export default function MarketplacePage() {
                       })}
                     </p>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}

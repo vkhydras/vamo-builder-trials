@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -60,7 +61,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [analyticsPage, setAnalyticsPage] = useState(0);
   const [analyticsFilter, setAnalyticsFilter] = useState("");
-  const [analyticsDateFilter, setAnalyticsDateFilter] = useState("");
+  const [analyticsStartDate, setAnalyticsStartDate] = useState("");
+  const [analyticsEndDate, setAnalyticsEndDate] = useState("");
   const [selectedUser, setSelectedUser] = useState<(Profile & { project_count?: number }) | null>(null);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [userActivity, setUserActivity] = useState<{ id: string; event_type: string; description: string | null; created_at: string }[]>([]);
@@ -260,9 +262,9 @@ export default function AdminPage() {
       {stats && (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           {statItems.map((stat) => (
-            <div
+            <Card
               key={stat.label}
-              className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3"
+              className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 gap-0 shadow-none"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">
@@ -278,7 +280,7 @@ export default function AdminPage() {
                   <span className="text-base">{stat.suffix}</span>
                 )}
               </p>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -301,7 +303,7 @@ export default function AdminPage() {
 
         {/* Pending Redemptions */}
         <TabsContent value="redemptions">
-          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">Pending Redemptions</h2>
             </div>
@@ -365,12 +367,12 @@ export default function AdminPage() {
                 </Table>
               )}
             </div>
-          </div>
+          </Card>
         </TabsContent>
 
         {/* Users */}
         <TabsContent value="users">
-          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">All Users</h2>
             </div>
@@ -423,12 +425,12 @@ export default function AdminPage() {
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </Card>
         </TabsContent>
 
         {/* Projects */}
         <TabsContent value="projects">
-          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">All Projects</h2>
             </div>
@@ -491,18 +493,18 @@ export default function AdminPage() {
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </Card>
         </TabsContent>
 
         {/* Analytics */}
         <TabsContent value="analytics">
-          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">Analytics Events</h2>
             </div>
             <div className="p-6">
-              <div className="flex gap-3 mb-4">
-                <div className="flex-1">
+              <div className="flex flex-wrap gap-3 mb-4">
+                <div className="flex-1 min-w-[200px]">
                   <Input
                     placeholder="Filter by event name..."
                     value={analyticsFilter}
@@ -513,19 +515,28 @@ export default function AdminPage() {
                 <div>
                   <Input
                     type="date"
-                    value={analyticsDateFilter}
-                    onChange={(e) => setAnalyticsDateFilter(e.target.value)}
+                    value={analyticsStartDate}
+                    onChange={(e) => setAnalyticsStartDate(e.target.value)}
                     className="h-9 text-sm w-40 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20"
                   />
                 </div>
-                {(analyticsFilter || analyticsDateFilter) && (
+                <div>
+                  <Input
+                    type="date"
+                    value={analyticsEndDate}
+                    onChange={(e) => setAnalyticsEndDate(e.target.value)}
+                    className="h-9 text-sm w-40 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                  />
+                </div>
+                {(analyticsFilter || analyticsStartDate || analyticsEndDate) && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-9 text-gray-500 hover:text-gray-900"
                     onClick={() => {
                       setAnalyticsFilter("");
-                      setAnalyticsDateFilter("");
+                      setAnalyticsStartDate("");
+                      setAnalyticsEndDate("");
                     }}
                   >
                     Clear
@@ -544,10 +555,9 @@ export default function AdminPage() {
                   {analyticsEvents
                     .filter((e) => {
                       if (analyticsFilter && !e.event_name.toLowerCase().includes(analyticsFilter.toLowerCase())) return false;
-                      if (analyticsDateFilter) {
-                        const eventDate = new Date(e.created_at).toISOString().split("T")[0];
-                        if (eventDate !== analyticsDateFilter) return false;
-                      }
+                      const eventDate = new Date(e.created_at).toISOString().split("T")[0];
+                      if (analyticsStartDate && eventDate < analyticsStartDate) return false;
+                      if (analyticsEndDate && eventDate > analyticsEndDate) return false;
                       return true;
                     })
                     .map((e) => (
@@ -578,7 +588,7 @@ export default function AdminPage() {
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
         </TabsContent>
       </Tabs>
 

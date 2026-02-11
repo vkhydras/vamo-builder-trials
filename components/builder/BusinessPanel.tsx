@@ -6,7 +6,7 @@ import type { Project, ActivityEvent } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -49,6 +49,7 @@ export function BusinessPanel({
   const [linkUrl, setLinkUrl] = useState("");
   const [linkingAsset, setLinkingAsset] = useState(false);
   const [linkedAssets, setLinkedAssets] = useState<Record<string, string>>({});
+  const [savingWhy, setSavingWhy] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -101,11 +102,18 @@ export function BusinessPanel({
   }, [loadData]);
 
   async function saveWhy() {
+    if (savingWhy) return;
+    if (whyText.trim() === (project.why_built || "").trim()) {
+      setEditingWhy(false);
+      return;
+    }
+    setSavingWhy(true);
     await supabase
       .from("projects")
-      .update({ why_built: whyText, updated_at: new Date().toISOString() })
+      .update({ why_built: whyText.trim(), updated_at: new Date().toISOString() })
       .eq("id", project.id);
     setEditingWhy(false);
+    setSavingWhy(false);
     onProjectUpdate();
     toast.success("Updated!");
   }
@@ -127,15 +135,21 @@ export function BusinessPanel({
       };
       const eventType = eventTypeMap[linkType];
 
-      await supabase.from("activity_events").insert({
+      const { data: linkEvent } = await supabase
+        .from("activity_events")
+        .insert({
         project_id: project.id,
         user_id: user.id,
         event_type: eventType,
         description: `Linked ${linkType}: ${linkUrl}`,
         metadata: { url: linkUrl },
-      });
+        })
+        .select("id")
+        .single();
 
-      const idempotencyKey = `${project.id}-${eventType}`;
+      const idempotencyKey = linkEvent?.id
+        ? `${linkEvent.id}-${eventType}`
+        : `${project.id}-${eventType}`;
       await fetch("/api/rewards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -230,6 +244,13 @@ export function BusinessPanel({
               <Textarea
                 value={whyText}
                 onChange={(e) => setWhyText(e.target.value)}
+                onBlur={saveWhy}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    saveWhy();
+                  }
+                }}
                 maxLength={1000}
                 rows={4}
                 className="text-sm"
@@ -244,7 +265,9 @@ export function BusinessPanel({
                   }}>
                     Cancel
                   </Button>
-                  <Button size="sm" className="h-7 text-xs" onClick={saveWhy}>Save</Button>
+                  <Button size="sm" className="h-7 text-xs" onClick={saveWhy} disabled={savingWhy}>
+                    {savingWhy ? "Saving..." : "Save"}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -409,6 +432,9 @@ export function BusinessPanel({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Link {linkType}</DialogTitle>
+            <DialogDescription>
+              Add a public URL to earn pineapple rewards.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">

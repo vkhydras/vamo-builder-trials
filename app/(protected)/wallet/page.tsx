@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -42,42 +43,33 @@ export default function WalletPage() {
 
   const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    trackEvent("page_view", { path: "/wallet" });
-    async function loadData() {
-      const [ledgerRes, redemptionRes] = await Promise.all([
-        supabase
-          .from("reward_ledger")
-          .select("*, projects(name)")
-          .order("created_at", { ascending: false })
-          .range(0, 19),
-        supabase
-          .from("redemptions")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
-
-      setLedger(ledgerRes.data || []);
-      setHasMoreLedger((ledgerRes.data || []).length === 20);
-      setRedemptions(redemptionRes.data || []);
-      setLoading(false);
-    }
-    loadData();
-  }, [supabase]);
-
-  async function loadMoreLedger() {
-    const nextPage = ledgerPage + 1;
-    const from = nextPage * 20;
+  async function loadLedgerPage(page: number) {
+    const from = page * 20;
     const { data } = await supabase
       .from("reward_ledger")
       .select("*, projects(name)")
       .order("created_at", { ascending: false })
       .range(from, from + 19);
 
-    setLedger((prev) => [...prev, ...(data || [])]);
+    setLedger(data || []);
     setHasMoreLedger((data || []).length === 20);
-    setLedgerPage(nextPage);
+    setLedgerPage(page);
   }
+
+  useEffect(() => {
+    trackEvent("page_view", { path: "/wallet" });
+    async function loadData() {
+      const redemptionRes = await supabase
+        .from("redemptions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      await loadLedgerPage(0);
+      setRedemptions(redemptionRes.data || []);
+      setLoading(false);
+    }
+    loadData();
+  }, [supabase]);
 
   async function handleRedeem() {
     const amount = parseInt(redeemAmount);
@@ -111,18 +103,12 @@ export default function WalletPage() {
       setRedeemAmount("");
       refreshProfile();
 
-      const [ledgerRes, redemptionRes] = await Promise.all([
-        supabase
-          .from("reward_ledger")
-          .select("*, projects(name)")
-          .order("created_at", { ascending: false })
-          .range(0, 19),
-        supabase
-          .from("redemptions")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
-      setLedger(ledgerRes.data || []);
+      const redemptionRes = await supabase
+        .from("redemptions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      await loadLedgerPage(0);
       setRedemptions(redemptionRes.data || []);
     } catch (err) {
       toast.error(
@@ -179,7 +165,7 @@ export default function WalletPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Balance Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 sm:p-8 flex items-center justify-between">
+      <Card className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 sm:p-8 flex items-center justify-between gap-0 border-0 shadow-none">
         <div>
           <p className="text-sm text-gray-400">Pineapple Balance</p>
           <p className="text-4xl font-black text-white mt-1">
@@ -194,10 +180,10 @@ export default function WalletPage() {
         >
           Redeem
         </Button>
-      </div>
+      </Card>
 
       {/* Reward History */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Reward History</h2>
         </div>
@@ -263,9 +249,9 @@ export default function WalletPage() {
               {/* Mobile card layout */}
               <div className="md:hidden space-y-3 stagger-children">
                 {ledger.map((entry) => (
-                  <div
+                  <Card
                     key={entry.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2"
+                    className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2 gap-0 shadow-none"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 capitalize">
                       {entry.event_type.replace(/_/g, " ")}
@@ -297,29 +283,40 @@ export default function WalletPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
 
-              {hasMoreLedger && (
-                <div className="text-center mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadMoreLedger}
-                    className="border-gray-200 text-gray-600 hover:bg-gray-50"
-                  >
-                    Load More
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center justify-between mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadLedgerPage(Math.max(ledgerPage - 1, 0))}
+                  disabled={ledgerPage === 0}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                >
+                  Previous
+                </Button>
+                <span className="text-xs text-gray-500">
+                  Page {ledgerPage + 1}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadLedgerPage(ledgerPage + 1)}
+                  disabled={!hasMoreLedger}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                >
+                  Next
+                </Button>
+              </div>
             </>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Redemption History */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Redemption History</h2>
         </div>
@@ -368,9 +365,9 @@ export default function WalletPage() {
               {/* Mobile card layout */}
               <div className="md:hidden space-y-3 stagger-children">
                 {redemptions.map((r) => (
-                  <div
+                  <Card
                     key={r.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2"
+                    className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2 gap-0 shadow-none"
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-gray-900">
@@ -388,13 +385,13 @@ export default function WalletPage() {
                         })}
                       </p>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Redeem Dialog */}
       <Dialog open={redeemOpen} onOpenChange={setRedeemOpen}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Project } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,6 +43,21 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
     tablet: "768px",
     mobile: "375px",
   };
+
+  useEffect(() => {
+    if (!project.url) return;
+    setIframeLoading(true);
+    setIframeError(false);
+  }, [project.url]);
+
+  useEffect(() => {
+    if (!project.url || iframeError || !iframeLoading) return;
+    const timer = setTimeout(() => {
+      setIframeError(true);
+      setIframeLoading(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [project.url, iframeKey, iframeLoading, iframeError]);
 
   function handleRefresh() {
     setIframeKey((prev) => prev + 1);

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { ArrowLeft } from "lucide-react";
@@ -94,7 +95,7 @@ export default function NewProjectPage() {
         Back to projects
       </Link>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
+      <Card className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 gap-0 shadow-none">
         <div className="mb-6">
           <h1 className="text-xl font-black tracking-tight text-gray-900">
             Create New Project
@@ -192,7 +193,7 @@ export default function NewProjectPage() {
             {loading ? "Creating..." : "Create Project"}
           </Button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

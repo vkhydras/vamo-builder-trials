@@ -14,7 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -474,7 +481,15 @@ export default function BuilderPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[350px] p-0">
-            <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
+            <SheetHeader className="border-b">
+              <SheetTitle>Builder Chat</SheetTitle>
+              <SheetDescription>
+                Log updates to earn pineapples and track progress.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 min-h-0">
+              <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
+            </div>
           </SheetContent>
         </Sheet>
       </div>
@@ -556,6 +571,9 @@ export default function BuilderPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Vamo Instant Offer</DialogTitle>
+            <DialogDescription>
+              A non-binding estimate based on your logged activity.
+            </DialogDescription>
           </DialogHeader>
           {offerLoading ? (
             <div className="space-y-3 py-4">

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { awardReward } from "@/lib/rewards";
 import OpenAI from "openai";
 
-// Spec: Send a prompt = 1, Tag a prompt (feature/customer/revenue) = +1 bonus
-const BASE_PROMPT_REWARD = 1;
-const TAG_BONUS = 1;
 const TAGGABLE = ["feature", "customer", "revenue"];
 
 const TRACTION_REWARDS: Record<string, number> = {
@@ -24,11 +22,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId, message, tag } = await request.json();
+    const { projectId, message, tag, messageId } = await request.json();
 
-    if (!projectId || !message) {
+    if (!projectId || (!message && !messageId)) {
       return NextResponse.json(
-        { error: "projectId and message are required" },
+        { error: "projectId and message or messageId are required" },
         { status: 400 }
       );
     }
@@ -44,19 +42,39 @@ export async function POST(request: NextRequest) {
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+    let userMessage: { id: string; content: string; tag: string | null } | null = null;
+    if (messageId) {
+      const { data: existingMessage } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("id", messageId)
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .single();
 
-    // Insert user message
-    const { data: userMessage } = await supabase
-      .from("messages")
-      .insert({
-        project_id: projectId,
-        user_id: user.id,
-        role: "user",
-        content: message,
-        tag: tag || null,
-      })
-      .select()
-      .single();
+      if (!existingMessage) {
+        return NextResponse.json({ error: "Message not found" }, { status: 404 });
+      }
+
+      userMessage = existingMessage;
+    } else {
+      const { data: insertedMessage } = await supabase
+        .from("messages")
+        .insert({
+          project_id: projectId,
+          user_id: user.id,
+          role: "user",
+          content: message,
+          tag: tag || null,
+        })
+        .select()
+        .single();
+
+      userMessage = insertedMessage;
+    }
+
+    const messageText = userMessage?.content || message || "";
+    const messageTag = tag ?? userMessage?.tag ?? null;
 
     // Load last 20 messages for context
     const { data: recentMessages } = await supabase
@@ -66,10 +84,15 @@ export async function POST(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    // Call OpenAI
+    // Call OpenAI with fallback message
     let aiResponse;
+    let aiFailed = false;
     try {
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing OPENAI_API_KEY");
+      }
+      const openai = new OpenAI({ apiKey });
 
       const chatMessages = (recentMessages || []).reverse().map((m) => ({
         role: m.role as "user" | "assistant",
@@ -89,7 +112,15 @@ Current progress score: ${project.progress_score}/100
 Your job:
 1. Respond helpfully to their update or question (keep it concise, 2-3 sentences max).
 2. Extract the intent of their message. Classify as one of: feature, customer, revenue, ask, general.
-3. If the update implies progress (shipped something, talked to users, made revenue), generate an updated business analysis.
+   - "feature": User shipped, built, launched, deployed, or completed a feature/product/page
+   - "customer": User talked to users, got signups, conducted interviews, gained waitlist members
+   - "revenue": User made money, got paid, received payment, made sales, earned income (ANY mention of $, revenue, payment, sales)
+   - "ask": User is asking a question or seeking advice
+   - "general": Everything else
+3. If the update implies REAL progress (shipped something, talked to users, made revenue), set traction_signal to a brief description.
+   - For feature: "Shipped [feature name]"
+   - For customer: "[X] users/signups/interviews"
+   - For revenue: "$[amount] revenue" or "First paying customer"
 4. Return your response as JSON only (no markdown, no code blocks):
 {
   "reply": "Your response text",
@@ -101,6 +132,7 @@ Your job:
   }
 }
 
+IMPORTANT: If the user mentions money, revenue, sales, payment, or dollar amounts, ALWAYS classify as "revenue" and set traction_signal.
 If insufficient data to assess progress, set progress_delta to 0 and traction_signal to null.
 Progress delta max is 5 per prompt. Be conservative with progress scores.`,
           },
@@ -111,7 +143,6 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
       });
 
       const raw = completion.choices[0]?.message?.content || "";
-      // Try to parse JSON from the response
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         aiResponse = JSON.parse(jsonMatch[0]);
@@ -126,10 +157,11 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
           },
         };
       }
-    } catch {
+    } catch (error) {
+      console.error("OpenAI error:", error);
+      aiFailed = true;
       aiResponse = {
-        reply:
-          "I couldn't process that right now. Your update has been saved.",
+        reply: "I couldn't process that right now. Your update has been saved.",
         intent: "general",
         business_update: {
           progress_delta: 0,
@@ -139,14 +171,114 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
       };
     }
 
-    // Determine pineapples for this prompt
-    // Spec: 1 base + 1 bonus if tagged with feature/customer/revenue
-    let pineapples = BASE_PROMPT_REWARD;
-    if (tag && TAGGABLE.includes(tag)) {
-      pineapples += TAG_BONUS;
+    // Use AI-detected intent for tag bonus if user didn't manually select one
+    const effectiveTag = messageTag || (TAGGABLE.includes(aiResponse.intent) ? aiResponse.intent : null);
+
+    // Update user message with AI-detected tag if not already set
+    if (!messageTag && effectiveTag && userMessage?.id) {
+      await supabase
+        .from("messages")
+        .update({ tag: effectiveTag })
+        .eq("id", userMessage.id);
     }
 
-    // Insert assistant message
+    let pineapples = 0;
+
+    // Award prompt pineapples via reward engine
+    try {
+      const promptRewardAmount = 1 +
+        (effectiveTag && TAGGABLE.includes(effectiveTag) ? 1 : 0);
+      const promptResult = await awardReward(supabase, {
+        userId: user.id,
+        projectId,
+        eventType: "prompt",
+        idempotencyKey: `${userMessage?.id}-prompt`,
+        rewardAmountOverride: promptRewardAmount,
+      });
+
+      if (promptResult.rewarded) {
+        pineapples += promptResult.amount;
+      }
+    } catch {
+      // Reward failure should not break chat
+    }
+
+    // Insert activity event for the prompt
+    await supabase.from("activity_events").insert({
+      project_id: projectId,
+      user_id: user.id,
+      event_type: "prompt",
+      description: (messageText || "").substring(0, 200),
+      metadata: { intent: aiResponse.intent },
+    });
+
+    if (!aiFailed) {
+      // Update progress score
+      const progressDelta = Math.min(
+        aiResponse.business_update?.progress_delta || 0,
+        5
+      );
+      if (progressDelta > 0) {
+        const newScore = Math.min(project.progress_score + progressDelta, 100);
+
+        let valuationLow = project.valuation_low;
+        let valuationHigh = project.valuation_high;
+        if (aiResponse.business_update?.valuation_adjustment === "up") {
+          valuationLow = Math.max(valuationLow, newScore * 50);
+          valuationHigh = Math.max(valuationHigh, newScore * 150);
+        }
+
+        await supabase
+          .from("projects")
+          .update({
+            progress_score: newScore,
+            valuation_low: valuationLow,
+            valuation_high: valuationHigh,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", projectId);
+      }
+
+      // Award traction reward if applicable
+      const tractionSignal = aiResponse.business_update?.traction_signal;
+      if (tractionSignal) {
+        const intent = aiResponse.intent;
+        let eventType = "update";
+        if (intent === "feature") eventType = "feature_shipped";
+        else if (intent === "customer") eventType = "customer_added";
+        else if (intent === "revenue") eventType = "revenue_logged";
+
+        const { data: tractionEvent } = await supabase
+          .from("activity_events")
+          .insert({
+            project_id: projectId,
+            user_id: user.id,
+            event_type: eventType,
+            description: tractionSignal,
+          })
+          .select("id")
+          .single();
+
+        if (tractionEvent && TRACTION_REWARDS[eventType]) {
+          try {
+            const tractionResult = await awardReward(supabase, {
+              userId: user.id,
+              projectId,
+              eventType,
+              idempotencyKey: `${tractionEvent.id}-${eventType}`,
+            });
+
+            if (tractionResult.rewarded) {
+              pineapples += tractionResult.amount;
+            }
+          } catch {
+            // Reward failure should not break chat
+          }
+        }
+      }
+    }
+
+    // Insert assistant message (after rewards computed)
     const { data: assistantMessage } = await supabase
       .from("messages")
       .insert({
@@ -155,156 +287,11 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
         role: "assistant",
         content: aiResponse.reply,
         extracted_intent: aiResponse.intent,
-        tag: tag || aiResponse.intent || null,
+        tag: messageTag || aiResponse.intent || null,
         pineapples_earned: pineapples,
       })
       .select()
       .single();
-
-    // Insert activity event for the prompt
-    await supabase.from("activity_events").insert({
-      project_id: projectId,
-      user_id: user.id,
-      event_type: "prompt",
-      description: message.substring(0, 200),
-      metadata: { intent: aiResponse.intent },
-    });
-
-    // Update progress score
-    const progressDelta = Math.min(
-      aiResponse.business_update?.progress_delta || 0,
-      5
-    );
-    if (progressDelta > 0) {
-      const newScore = Math.min(project.progress_score + progressDelta, 100);
-
-      let valuationLow = project.valuation_low;
-      let valuationHigh = project.valuation_high;
-      if (aiResponse.business_update?.valuation_adjustment === "up") {
-        valuationLow = Math.max(valuationLow, newScore * 50);
-        valuationHigh = Math.max(valuationHigh, newScore * 150);
-      }
-
-      await supabase
-        .from("projects")
-        .update({
-          progress_score: newScore,
-          valuation_low: valuationLow,
-          valuation_high: valuationHigh,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", projectId);
-    }
-
-    // Award prompt pineapples (read balance once, apply all rewards sequentially)
-    try {
-      const idempotencyKey = `${userMessage?.id}-prompt-reward`;
-
-      // Check rate limit: max 60 rewarded prompts per project per hour
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { count } = await supabase
-        .from("reward_ledger")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("project_id", projectId)
-        .gte("created_at", oneHourAgo);
-
-      if ((count || 0) < 60) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("pineapple_balance")
-          .eq("id", user.id)
-          .single();
-
-        let runningBalance = profile?.pineapple_balance || 0;
-
-        // 1. Award prompt reward
-        const promptBalance = runningBalance + pineapples;
-        const { error: ledgerError } = await supabase
-          .from("reward_ledger")
-          .insert({
-            user_id: user.id,
-            project_id: projectId,
-            event_type: "prompt",
-            reward_amount: pineapples,
-            balance_after: promptBalance,
-            idempotency_key: idempotencyKey,
-          });
-
-        if (!ledgerError) {
-          runningBalance = promptBalance;
-
-          await supabase.from("activity_events").insert({
-            project_id: projectId,
-            user_id: user.id,
-            event_type: "reward_earned",
-            description: `Earned ${pineapples} pineapple${pineapples > 1 ? "s" : ""} for prompt`,
-            metadata: { amount: pineapples },
-          });
-        }
-
-        // 2. Award traction reward if applicable (uses running balance)
-        const tractionSignal = aiResponse.business_update?.traction_signal;
-        if (tractionSignal) {
-          const intent = aiResponse.intent;
-          let eventType = "update";
-          if (intent === "feature") eventType = "feature_shipped";
-          else if (intent === "customer") eventType = "customer_added";
-          else if (intent === "revenue") eventType = "revenue_logged";
-
-          const { data: tractionEvent } = await supabase
-            .from("activity_events")
-            .insert({
-              project_id: projectId,
-              user_id: user.id,
-              event_type: eventType,
-              description: tractionSignal,
-            })
-            .select("id")
-            .single();
-
-          if (tractionEvent && TRACTION_REWARDS[eventType]) {
-            const tractionAmount = TRACTION_REWARDS[eventType];
-            const tractionKey = `${tractionEvent.id}-${eventType}-reward`;
-            const tractionBalance = runningBalance + tractionAmount;
-
-            const { error: tractionError } = await supabase
-              .from("reward_ledger")
-              .insert({
-                user_id: user.id,
-                project_id: projectId,
-                event_type: eventType,
-                reward_amount: tractionAmount,
-                balance_after: tractionBalance,
-                idempotency_key: tractionKey,
-              });
-
-            if (!tractionError) {
-              runningBalance = tractionBalance;
-              pineapples += tractionAmount;
-
-              await supabase.from("activity_events").insert({
-                project_id: projectId,
-                user_id: user.id,
-                event_type: "reward_earned",
-                description: `Earned ${tractionAmount} pineapple${tractionAmount > 1 ? "s" : ""} for ${eventType.replace(/_/g, " ")}`,
-                metadata: { amount: tractionAmount },
-              });
-            }
-          }
-        }
-
-        // 3. Update balance once with final amount
-        await supabase
-          .from("profiles")
-          .update({ pineapple_balance: runningBalance })
-          .eq("id", user.id);
-      } else {
-        pineapples = 0; // Rate limited
-      }
-    } catch {
-      // Reward failure should not break chat
-    }
 
     // Track analytics
     await supabase.from("analytics_events").insert({
@@ -314,9 +301,12 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
       properties: { messageId: userMessage?.id },
     });
 
+    // Return updated user message with effective tag
+    const updatedUserMessage = userMessage ? { ...userMessage, tag: effectiveTag } : userMessage;
+
     return NextResponse.json({
       message: assistantMessage,
-      userMessage,
+      userMessage: updatedUserMessage,
       pineapples,
       businessUpdate: aiResponse.business_update,
     });

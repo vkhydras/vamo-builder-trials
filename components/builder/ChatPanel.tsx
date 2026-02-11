@@ -75,26 +75,43 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
 
     const tagToSend = prefillTag ?? selectedTag;
 
-    const tempUserMsg: Message = {
-      id: `temp-${Date.now()}`,
-      project_id: projectId,
-      user_id: "",
-      role: "user",
-      content: messageText,
-      extracted_intent: null,
-      tag: tagToSend as Message["tag"],
-      pineapples_earned: 0,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, tempUserMsg]);
-
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error("You must be logged in to send messages.");
+        setInput(messageText);
+        return;
+      }
+
+      const { data: userMessage, error: insertError } = await supabase
+        .from("messages")
+        .insert({
+          project_id: projectId,
+          user_id: user.id,
+          role: "user",
+          content: messageText,
+          tag: tagToSend || null,
+        })
+        .select()
+        .single();
+
+      if (insertError || !userMessage) {
+        toast.error("Failed to save your message. Please try again.");
+        setInput(messageText);
+        return;
+      }
+
+      setMessages((prev) => [...prev, userMessage as Message]);
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
-          message: messageText,
+          messageId: userMessage.id,
           tag: tagToSend,
         }),
       });
@@ -104,8 +121,16 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
       const data = await res.json();
 
       setMessages((prev) => {
-        const filtered = prev.filter((m) => m.id !== tempUserMsg.id);
-        return [...filtered, data.userMessage, data.message];
+        const next = [...prev];
+        if (data.userMessage) {
+          const idx = next.findIndex((m) => m.id === data.userMessage.id);
+          if (idx >= 0) next[idx] = data.userMessage;
+        }
+        if (data.message) {
+          const exists = next.some((m) => m.id === data.message.id);
+          if (!exists) next.push(data.message);
+        }
+        return next;
       });
 
       if (data.pineapples > 0) {
@@ -118,8 +143,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
       onMessageSent();
     } catch {
       toast.error("Failed to send message. Please try again.");
-      setInput(messageText);
-      setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
+      // Message is already saved; keep it and allow retry
     } finally {
       setSending(false);
     }
@@ -149,7 +173,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="px-4 py-3 border-b">
         <div className="flex items-center gap-2">
@@ -161,7 +185,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto p-4 min-h-0" ref={scrollRef}>
         <div className="space-y-4">
           {messages.length === 0 && (
             <div className="text-center py-10 text-muted-foreground text-sm animate-fade-in-up">
@@ -263,7 +287,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
       </div>
 
       {/* Input area */}
-      <div className="border-t p-3 space-y-2 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]">
+      <div className="border-t p-3 space-y-2 shadow-[0_-1px_3px_rgba(0,0,0,0.04)] sticky bottom-0 bg-background z-10">
         <div className="flex gap-1.5">
           {TAG_OPTIONS.map((tag) => (
             <button
