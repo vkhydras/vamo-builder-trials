@@ -186,7 +186,7 @@ export function BusinessPanel({
     <div className="h-full overflow-y-auto">
       <div className="p-4 space-y-6">
         {/* Section 1: Valuation Range */}
-        <div className="rounded-xl bg-gray-50/50 p-4">
+        <div className="rounded-xl bg-muted/40 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Valuation Range
           </h3>
@@ -208,7 +208,7 @@ export function BusinessPanel({
         </div>
 
         {/* Section 2: Why I Built This */}
-        <div className="rounded-xl bg-gray-50/50 p-4">
+        <div className="rounded-xl bg-muted/40 p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Why I Built This
@@ -256,7 +256,7 @@ export function BusinessPanel({
         </div>
 
         {/* Section 3: Progress Score */}
-        <div className="rounded-xl bg-gray-50/50 p-4">
+        <div className="rounded-xl bg-muted/40 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Progress Score
           </h3>
@@ -289,7 +289,7 @@ export function BusinessPanel({
         </div>
 
         {/* Section 4: Traction Signals */}
-        <div className="rounded-xl bg-gray-50/50 p-4">
+        <div className="rounded-xl bg-muted/40 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Traction Signals
           </h3>
@@ -323,7 +323,7 @@ export function BusinessPanel({
         </div>
 
         {/* Section 5: Linked Assets */}
-        <div className="rounded-xl bg-gray-50/50 p-4">
+        <div className="rounded-xl bg-muted/40 p-4">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Linked Assets
           </h3>
@@ -363,7 +363,7 @@ export function BusinessPanel({
         </div>
 
         {/* Section 6: Mini Activity Timeline */}
-        <div className="rounded-xl bg-gray-50/50 p-4">
+        <div className="rounded-xl bg-muted/40 p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Activity Timeline

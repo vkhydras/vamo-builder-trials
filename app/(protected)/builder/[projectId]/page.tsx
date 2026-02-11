@@ -305,7 +305,7 @@ export default function BuilderPage() {
   }
 
   const headerContent = (
-    <header className="h-14 border-b border-gray-100 flex items-center px-4 bg-white/90 backdrop-blur-md shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative z-10">
+    <header className="h-14 border-b border-border/50 flex items-center px-4 bg-background/80 backdrop-blur-md shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)] relative z-10">
       {/* Left group: Logo + Pineapple balance */}
       <div className="flex items-center gap-3 shrink-0">
         <Link href="/projects" className="flex items-center gap-2 shrink-0">
@@ -412,12 +412,12 @@ export default function BuilderPage() {
       {/* Desktop (≥1280px): All three panels side by side */}
       <div className="flex-1 hidden xl:flex overflow-hidden">
         {/* Left: Chat ~300px */}
-        <div className="w-[300px] border-r border-gray-200/60 flex flex-col overflow-hidden shrink-0 bg-white">
+        <div className="w-[300px] border-r border-border/50 flex flex-col overflow-hidden shrink-0 bg-background/95 backdrop-blur-sm">
           <ChatPanel projectId={projectId} onMessageSent={handleMessageSent} />
         </div>
 
         {/* Center: UI Preview — flexible */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200/60 bg-gray-50/30">
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-border/50 bg-muted/20">
           <UIPreview
             project={project}
             onOpenSettings={() => {
@@ -428,7 +428,7 @@ export default function BuilderPage() {
         </div>
 
         {/* Right: Business Panel ~360px */}
-        <div className="w-[360px] flex flex-col overflow-hidden shrink-0 bg-white">
+        <div className="w-[360px] flex flex-col overflow-hidden shrink-0 bg-background/95 backdrop-blur-sm">
           <BusinessPanel
             project={project}
             refreshKey={refreshKey}
@@ -441,7 +441,7 @@ export default function BuilderPage() {
       {/* Tablet (768-1279px): Chat as Sheet, Center+Right visible */}
       <div className="flex-1 hidden md:flex xl:hidden overflow-hidden">
         {/* Center: UI Preview — flexible */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200/60 bg-gray-50/30">
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-border/50 bg-muted/20">
           <UIPreview
             project={project}
             onOpenSettings={() => {
@@ -452,7 +452,7 @@ export default function BuilderPage() {
         </div>
 
         {/* Right: Business Panel ~360px */}
-        <div className="w-[360px] flex flex-col overflow-hidden shrink-0 bg-white">
+        <div className="w-[360px] flex flex-col overflow-hidden shrink-0 bg-background/95 backdrop-blur-sm">
           <BusinessPanel
             project={project}
             refreshKey={refreshKey}

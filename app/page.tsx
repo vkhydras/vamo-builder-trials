@@ -393,9 +393,9 @@ export default function HomePage() {
         </section>
 
         {/* Dark CTA band */}
-        <section className="bg-gray-900 py-16 md:py-20">
+        <section className="py-16 md:py-20">
           <div className="max-w-3xl mx-auto px-4 text-center">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 leading-tight mb-4">
               Your startup deserves a progress trail.
             </h2>
             <p className="text-gray-400 text-sm max-w-md mx-auto mb-8">
@@ -403,7 +403,7 @@ export default function HomePage() {
               verified event with a timestamp and AI analysis.
             </p>
             <Link href="/signup">
-              <Button className="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-8 h-11 text-sm rounded-lg shadow-lg shadow-black/20 transition-all">
+              <Button className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 h-11 text-sm rounded-lg shadow-lg shadow-gray-900/10 hover:shadow-xl transition-all">
                 Start building — it&apos;s free
                 <ArrowRight className="h-3.5 w-3.5 ml-2" />
               </Button>
