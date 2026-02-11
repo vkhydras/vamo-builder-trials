@@ -18,11 +18,21 @@ export default function SignupPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
+  function getBaseUrl() {
+    if (process.env.NEXT_PUBLIC_SITE_URL) {
+      return process.env.NEXT_PUBLIC_SITE_URL;
+    }
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+    return "";
+  }
+
   async function handleGoogleLogin() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${getBaseUrl()}/auth/callback`,
       },
     });
     if (error) {
