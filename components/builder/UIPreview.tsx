@@ -121,7 +121,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
       <div className="flex-1 bg-muted/30 flex items-start justify-center p-4 overflow-auto">
         {project.url && !isSameOrigin ? (
           <div
-            className="bg-white rounded-lg shadow-sm overflow-hidden h-full transition-all"
+            className="bg-[#F9F9F9] rounded-lg shadow-sm overflow-hidden h-full transition-all"
             style={{
               width: deviceWidths[device],
               maxWidth: "100%",
@@ -195,7 +195,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
           <div className="flex flex-col items-center justify-center h-full text-center bg-dot-grid rounded-xl">
             {/* Browser wireframe illustration */}
             <div className="w-64 mb-6">
-              <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+              <div className="border border-gray-200 rounded-lg overflow-hidden bg-[#F9F9F9] shadow-sm">
                 {/* Title bar */}
                 <div className="flex items-center gap-1.5 px-3 py-2 border-b border-gray-100 bg-gray-50/80">
                   <div className="h-2 w-2 rounded-full bg-red-300" />

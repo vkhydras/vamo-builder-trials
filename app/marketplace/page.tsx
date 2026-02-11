@@ -58,7 +58,7 @@ export default function MarketplacePage() {
   }, [supabase]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-[#F9F9F9]">
       <Navbar />
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -109,7 +109,7 @@ export default function MarketplacePage() {
               {listings.map((listing) => (
                 <Card
                   key={listing.id}
-                  className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group gap-0 shadow-none"
+                  className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group gap-0 shadow-none"
                   onClick={() => setSelected(listing)}
                 >
                   {listing.screenshots && listing.screenshots.length > 0 && (

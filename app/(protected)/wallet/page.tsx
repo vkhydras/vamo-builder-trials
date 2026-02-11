@@ -176,14 +176,14 @@ export default function WalletPage() {
           size="lg"
           onClick={() => setRedeemOpen(true)}
           disabled={(profile?.pineapple_balance || 0) < 50}
-          className="bg-white hover:bg-gray-100 text-gray-900 font-medium"
+          className="bg-[#F9F9F9] hover:bg-gray-100 text-gray-900 font-medium"
         >
           Redeem
         </Button>
       </Card>
 
       {/* Reward History */}
-      <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
+      <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden gap-0 shadow-none">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Reward History</h2>
         </div>
@@ -316,7 +316,7 @@ export default function WalletPage() {
       </Card>
 
       {/* Redemption History */}
-      <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
+      <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden gap-0 shadow-none">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Redemption History</h2>
         </div>

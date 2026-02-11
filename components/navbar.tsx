@@ -38,7 +38,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="border-b border-gray-100 bg-white/90 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-gray-100 bg-[#F9F9F9]/90 backdrop-blur-md sticky top-0 z-50">
       <div className="px-6 sm:px-8 lg:px-12 py-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/projects">
@@ -71,13 +71,6 @@ export function Navbar() {
             <Skeleton className="h-8 w-24" />
           ) : user ? (
             <>
-              <Link
-                href="/wallet"
-                className="flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:opacity-80 transition-opacity"
-              >
-                <span>🍍</span>
-                <span>{profile?.pineapple_balance ?? 0}</span>
-              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className="rounded-full outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer">
@@ -154,7 +147,7 @@ export function Navbar() {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1">
+        <div className="md:hidden border-t border-gray-100 bg-[#F9F9F9] px-4 py-3 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}

@@ -95,7 +95,7 @@ export default function NewProjectPage() {
         Back to projects
       </Link>
 
-      <Card className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 gap-0 shadow-none">
+      <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] p-6 sm:p-8 gap-0 shadow-none">
         <div className="mb-6">
           <h1 className="text-xl font-black tracking-tight text-gray-900">
             Create New Project

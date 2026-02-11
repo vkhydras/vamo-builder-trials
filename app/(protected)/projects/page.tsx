@@ -115,7 +115,7 @@ export default function ProjectsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 stagger-children">
           {projects.map((project) => (
             <Link key={project.id} href={`/builder/${project.id}`}>
-              <Card className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full bg-white group gap-0 shadow-none">
+              <Card className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full bg-[#F9F9F9] group gap-0 shadow-none">
                 <div
                   className="h-1"
                   style={{ background: getProgressGradient(project.progress_score) }}

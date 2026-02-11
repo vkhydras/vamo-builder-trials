@@ -247,7 +247,7 @@ export default function BuilderPage() {
     return (
       <div className="h-screen flex flex-col bg-background">
         {/* Header skeleton */}
-        <div className="h-14 border-b border-gray-100 flex items-center px-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative">
+        <div className="h-14 border-b border-gray-100 flex items-center px-4 bg-[#F9F9F9] shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative">
           <div className="flex items-center gap-3">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-5 w-12" />
@@ -264,7 +264,7 @@ export default function BuilderPage() {
         {/* 3-panel skeleton */}
         <div className="flex-1 flex overflow-hidden">
           {/* Chat panel skeleton */}
-          <div className="w-[300px] border-r border-gray-200/60 bg-white p-4 flex flex-col">
+          <div className="w-[300px] border-r border-gray-200/60 bg-[#F9F9F9] p-4 flex flex-col">
             <div className="space-y-4 flex-1">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className={`flex gap-2 ${i % 2 === 1 ? "justify-end" : ""}`}>
@@ -291,7 +291,7 @@ export default function BuilderPage() {
           </div>
 
           {/* Business panel skeleton */}
-          <div className="w-[360px] border-l border-gray-200/60 bg-white p-4 space-y-4 hidden xl:block">
+          <div className="w-[360px] border-l border-gray-200/60 bg-[#F9F9F9] p-4 space-y-4 hidden xl:block">
             <Skeleton className="h-5 w-24" />
             <div className="grid grid-cols-2 gap-3">
               <Skeleton className="h-20 rounded-lg" />
@@ -313,16 +313,11 @@ export default function BuilderPage() {
 
   const headerContent = (
     <header className="h-14 border-b border-border/50 flex items-center px-4 bg-background/80 backdrop-blur-md shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)] relative z-10">
-      {/* Left group: Logo + Pineapple balance */}
+      {/* Left group: Logo */}
       <div className="flex items-center gap-3 shrink-0">
         <Link href="/projects" className="flex items-center gap-2 shrink-0">
           <Image src="/logo.svg" alt="Vamo" width={64} height={16} />
         </Link>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-sm">🍍</span>
-          <span className="text-sm font-semibold">{profile?.pineapple_balance ?? 0}</span>
-        </div>
       </div>
 
       {/* Center group: Project name (absolute centered) */}
@@ -497,7 +492,7 @@ export default function BuilderPage() {
       {/* Mobile (<768px): Tab-based navigation */}
       <div className="flex-1 md:hidden overflow-hidden">
         <Tabs defaultValue="chat" className="flex flex-col h-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-white h-11">
+          <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-[#F9F9F9] h-11">
             <TabsTrigger
               value="chat"
               className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 data-[state=active]:font-semibold data-[state=active]:shadow-none transition-colors"

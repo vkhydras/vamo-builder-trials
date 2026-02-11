@@ -73,7 +73,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F9F9F9] px-4">
       <div className="w-full max-w-sm space-y-6">
         <Link
           href="/"
@@ -152,7 +152,7 @@ function LoginContent() {
             <span className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-gray-400">or</span>
+            <span className="bg-[#F9F9F9] px-2 text-gray-400">or</span>
           </div>
         </div>
 

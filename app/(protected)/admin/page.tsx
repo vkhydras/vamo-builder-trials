@@ -264,7 +264,7 @@ export default function AdminPage() {
           {statItems.map((stat) => (
             <Card
               key={stat.label}
-              className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 gap-0 shadow-none"
+              className="rounded-2xl border border-gray-200 bg-[#F9F9F9] p-4 space-y-3 gap-0 shadow-none"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">
@@ -287,23 +287,23 @@ export default function AdminPage() {
 
       <Tabs defaultValue="redemptions">
         <TabsList className="bg-gray-100 border border-gray-200">
-          <TabsTrigger value="redemptions" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+          <TabsTrigger value="redemptions" className="data-[state=active]:bg-[#F9F9F9] data-[state=active]:text-gray-900 text-gray-500">
             Redemptions ({pendingRedemptions.length})
           </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+          <TabsTrigger value="users" className="data-[state=active]:bg-[#F9F9F9] data-[state=active]:text-gray-900 text-gray-500">
             Users
           </TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+          <TabsTrigger value="projects" className="data-[state=active]:bg-[#F9F9F9] data-[state=active]:text-gray-900 text-gray-500">
             Projects
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-500">
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-[#F9F9F9] data-[state=active]:text-gray-900 text-gray-500">
             Analytics
           </TabsTrigger>
         </TabsList>
 
         {/* Pending Redemptions */}
         <TabsContent value="redemptions">
-          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
+          <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">Pending Redemptions</h2>
             </div>
@@ -372,7 +372,7 @@ export default function AdminPage() {
 
         {/* Users */}
         <TabsContent value="users">
-          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
+          <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">All Users</h2>
             </div>
@@ -430,7 +430,7 @@ export default function AdminPage() {
 
         {/* Projects */}
         <TabsContent value="projects">
-          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
+          <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">All Projects</h2>
             </div>
@@ -498,7 +498,7 @@ export default function AdminPage() {
 
         {/* Analytics */}
         <TabsContent value="analytics">
-          <Card className="rounded-2xl border border-gray-200 bg-white overflow-hidden gap-0 shadow-none">
+          <Card className="rounded-2xl border border-gray-200 bg-[#F9F9F9] overflow-hidden gap-0 shadow-none">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">Analytics Events</h2>
             </div>

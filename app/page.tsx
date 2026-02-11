@@ -13,7 +13,7 @@ import {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-[#F9F9F9]">
       {/* Nav */}
       <header className="sticky top-0 z-50 glass border-b border-gray-100">
         <div className="px-6 sm:px-8 lg:px-12 py-3 flex items-center justify-between">
@@ -98,7 +98,7 @@ export default function HomePage() {
         {/* Product mockup — browser chrome with real panels */}
         <section className="animate-fade-in-delay-3 pb-20 md:pb-28 px-4">
           <div className="max-w-5xl mx-auto">
-            <div className="rounded-xl border border-gray-200 bg-white shadow-2xl shadow-gray-200/50 overflow-hidden">
+            <div className="rounded-xl border border-gray-200 bg-[#F9F9F9] shadow-2xl shadow-gray-200/50 overflow-hidden">
               {/* Title bar */}
               <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
                 <div className="flex gap-1.5">
@@ -107,7 +107,7 @@ export default function HomePage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
                 </div>
                 <div className="flex-1 flex justify-center">
-                  <div className="bg-white border border-gray-200 rounded-md px-4 py-1 text-[11px] text-gray-400 font-mono w-64 text-center">
+                  <div className="bg-[#F9F9F9] border border-gray-200 rounded-md px-4 py-1 text-[11px] text-gray-400 font-mono w-64 text-center">
                     vamo.app/builder/my-startup
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function HomePage() {
                       <div className="w-5 h-4 rounded-sm bg-gray-200" />
                     </div>
                   </div>
-                  <div className="flex-1 bg-white rounded-lg border border-gray-200 p-5 space-y-4">
+                  <div className="flex-1 bg-[#F9F9F9] rounded-lg border border-gray-200 p-5 space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-gray-900" />
                       <div className="space-y-1 flex-1">
@@ -197,7 +197,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-2 pt-1">
                       <div className="h-8 flex-1 bg-gray-900 rounded-md" />
-                      <div className="h-8 flex-1 bg-white rounded-md border border-gray-200" />
+                      <div className="h-8 flex-1 bg-[#F9F9F9] rounded-md border border-gray-200" />
                     </div>
                     <div className="grid grid-cols-3 gap-2 pt-2">
                       <div className="h-20 bg-gray-50 rounded-lg border border-gray-100" />
@@ -321,18 +321,18 @@ export default function HomePage() {
                 </div>
                 <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="bg-[#F9F9F9] rounded-lg p-3 border border-gray-200">
                       <p className="text-[10px] text-gray-400 font-medium mb-1">VALUATION</p>
                       <p className="text-base font-black text-gray-900">$12k – $28k</p>
                     </div>
-                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="bg-[#F9F9F9] rounded-lg p-3 border border-gray-200">
                       <p className="text-[10px] text-gray-400 font-medium mb-1">PROGRESS</p>
                       <div className="flex items-baseline gap-1">
                         <p className="text-base font-black text-gray-900">42</p>
                         <p className="text-xs text-gray-400">/100</p>
                       </div>
                     </div>
-                    <div className="bg-white rounded-lg p-3 border border-gray-200 col-span-2">
+                    <div className="bg-[#F9F9F9] rounded-lg p-3 border border-gray-200 col-span-2">
                       <p className="text-[10px] text-gray-400 font-medium mb-2">TRACTION SIGNALS</p>
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-flex items-center gap-1 text-[11px] text-gray-600 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
@@ -367,7 +367,7 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                  <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="bg-[#F9F9F9] rounded-lg border border-gray-200 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-xs font-bold text-gray-900">Vamo Instant Offer</p>
@@ -381,7 +381,7 @@ export default function HomePage() {
                       <div className="flex-1 h-8 bg-gray-900 rounded-md flex items-center justify-center">
                         <span className="text-[11px] text-white font-medium">List for Sale</span>
                       </div>
-                      <div className="flex-1 h-8 bg-white rounded-md border border-gray-200 flex items-center justify-center">
+                      <div className="flex-1 h-8 bg-[#F9F9F9] rounded-md border border-gray-200 flex items-center justify-center">
                         <span className="text-[11px] text-gray-600 font-medium">Dismiss</span>
                       </div>
                     </div>

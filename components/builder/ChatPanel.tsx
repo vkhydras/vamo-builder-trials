@@ -204,7 +204,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
                   <button
                     key={prompt.label}
                     onClick={() => handleSend(prompt.label, prompt.tag)}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-border bg-white hover:border-emerald-300 hover:bg-emerald-50/50 transition-all text-left text-sm text-foreground group"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-border bg-[#F9F9F9] hover:border-emerald-300 hover:bg-emerald-50/50 transition-all text-left text-sm text-foreground group"
                   >
                     <div className="h-7 w-7 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
                       <prompt.icon className="h-3.5 w-3.5 text-emerald-600" />
