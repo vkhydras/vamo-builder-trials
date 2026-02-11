@@ -60,7 +60,7 @@ export default function HomePage() {
       <main className="flex-1">
         {/* Hero — tight, editorial, no fluff */}
         <section className="relative pt-24 pb-14 md:pt-32 md:pb-16 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-dot-grid opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 via-transparent to-transparent" />
 
           <div className="relative max-w-2xl mx-auto space-y-5">
             <p className="animate-fade-in font-mono text-xs text-gray-400 tracking-wider uppercase">
@@ -413,29 +413,46 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-8">
-        <div className="px-6 sm:px-8 lg:px-12 flex items-center justify-between">
-          <Image
-            src="/logo.svg"
-            alt="Vamo"
-            width={64}
-            height={16}
-            className="opacity-40"
-          />
-          <div className="flex items-center gap-4 text-xs text-gray-400">
-            <Link
-              href="/marketplace"
-              className="hover:text-gray-600 transition-colors"
-            >
-              Marketplace
-            </Link>
-            <Link
-              href="/login"
-              className="hover:text-gray-600 transition-colors"
-            >
-              Log in
-            </Link>
-            <span>&copy; {new Date().getFullYear()}</span>
+      <footer className="border-t border-gray-100 bg-gray-50/50 py-10">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <Image
+                src="/logo.svg"
+                alt="Vamo"
+                width={72}
+                height={18}
+                className="opacity-50"
+              />
+              <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
+                The builder workspace where non-technical founders
+                log progress, earn pineapples, and get valued.
+              </p>
+            </div>
+            <div className="flex items-center gap-6 text-xs text-gray-400">
+              <Link
+                href="/marketplace"
+                className="hover:text-gray-600 transition-colors"
+              >
+                Marketplace
+              </Link>
+              <Link
+                href="/login"
+                className="hover:text-gray-600 transition-colors"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="hover:text-gray-600 transition-colors"
+              >
+                Sign up
+              </Link>
+            </div>
+          </div>
+          <div className="mt-8 pt-6 border-t border-gray-200/60 flex items-center justify-between text-[11px] text-gray-400">
+            <span>&copy; {new Date().getFullYear()} Vamo. All rights reserved.</span>
+            <span className="font-mono">Build in public.</span>
           </div>
         </div>
       </footer>
