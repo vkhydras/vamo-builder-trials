@@ -254,12 +254,12 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
                 </div>
                 {msg.role === "user" ? (
                   <div className="bg-gray-900 text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5 inline-block max-w-full">
-                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.content || ""}</p>
                   </div>
                 ) : (
                   <div className="border-l-2 border-emerald-400 pl-3">
                     <p className="text-sm whitespace-pre-wrap break-words leading-relaxed text-foreground/90">
-                      {msg.content}
+                      {msg.content || ""}
                     </p>
                   </div>
                 )}

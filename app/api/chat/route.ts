@@ -135,33 +135,38 @@ Current progress score: ${project.progress_score}/100
 Your job:
 1. Respond helpfully to their update or question (keep it concise, 2-3 sentences max).
 2. Extract the intent of their message. Classify as one of: feature, customer, revenue, ask, general.
-   - "feature": User shipped, built, launched, deployed, or completed a feature/product/page
-   - "customer": User talked to users, got signups, conducted interviews, gained waitlist members
-   - "revenue": User made money, got paid, received payment, made sales, earned income (ANY mention of $, revenue, payment, sales)
-   - "ask": User is asking a question or seeking advice
-   - "general": Everything else
+   - "feature": User shipped, built, launched, deployed, or completed a feature/product/page/tool. Keywords: shipped, built, added, launched, deployed, implemented, created, designed, finished.
+   - "customer": User got customers, users, signups, interviews, waitlist members, or any form of user acquisition. Keywords: customer, user, signup, interview, waitlist, subscriber, follower, download, install.
+   - "revenue": User made money, got paid, received payment, made sales, earned income. Keywords: $, revenue, payment, sales, sold, income, profit, earned, money, order, purchase, paid.
+   - "ask": User is asking a question or seeking advice.
+   - "general": ONLY use this if the message does not fit any of the above categories.
 3. If the update implies REAL progress (shipped something, talked to users, made revenue), set traction_signal to a brief description.
    - For feature: "Shipped [feature name]"
-   - For customer: "[X] users/signups/interviews"
+   - For customer: "[X] users/signups/interviews" or "First customer"
    - For revenue: "$[amount] revenue" or "First paying customer"
-4. Return your response as JSON only (no markdown, no code blocks):
+4. You MUST return valid JSON with this exact structure:
 {
   "reply": "Your response text",
   "intent": "feature|customer|revenue|ask|general",
   "business_update": {
-    "progress_delta": 0-5,
-    "traction_signal": "string or null",
-    "valuation_adjustment": "up|down|none"
+    "progress_delta": 0,
+    "traction_signal": null,
+    "valuation_adjustment": "none"
   }
 }
 
-IMPORTANT: If the user mentions money, revenue, sales, payment, or dollar amounts, ALWAYS classify as "revenue" and set traction_signal.
-If insufficient data to assess progress, set progress_delta to 0 and traction_signal to null.
-Progress delta max is 5 per prompt. Be conservative with progress scores.`,
+CRITICAL CLASSIFICATION RULES:
+- If the user mentions money, revenue, sales, payment, dollar amounts, or orders: intent MUST be "revenue".
+- If the user mentions shipping, building, adding, or deploying a feature: intent MUST be "feature".
+- If the user mentions getting customers, users, signups, or interviews: intent MUST be "customer".
+- Do NOT classify progress updates as "general". Only use "general" for greetings, off-topic chat, or meta-questions.
+- If insufficient data to assess progress, set progress_delta to 0 and traction_signal to null.
+- Progress delta max is 5 per prompt. Be conservative with progress scores.`,
           },
           ...chatMessages,
         ],
-        temperature: 0.7,
+        response_format: { type: "json_object" },
+        temperature: 0.4,
         max_tokens: 500,
       });
 
@@ -279,6 +284,13 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
         if (intent === "feature") eventType = "feature_shipped";
         else if (intent === "customer") eventType = "customer_added";
         else if (intent === "revenue") eventType = "revenue_logged";
+        else if (intent === "general") {
+          // Fallback: infer event type from traction signal or message text
+          const combined = `${tractionSignal} ${messageText}`.toLowerCase();
+          if (/\$|revenue|sales|paid|payment|income|money|order/.test(combined)) eventType = "revenue_logged";
+          else if (/customer|user|signup|interview|waitlist|subscriber/.test(combined)) eventType = "customer_added";
+          else if (/shipped|built|launched|deployed|feature|added|created/.test(combined)) eventType = "feature_shipped";
+        }
 
         const { data: tractionEvent } = await supabase
           .from("activity_events")

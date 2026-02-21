@@ -66,6 +66,7 @@ export function BusinessPanel({
         .select("*")
         .eq("project_id", project.id)
         .in("event_type", ["feature_shipped", "customer_added", "revenue_logged"])
+        .not("description", "is", null)
         .order("created_at", { ascending: false }),
       supabase
         .from("activity_events")
@@ -354,7 +355,7 @@ export function BusinessPanel({
                     {getEventIcon(signal.event_type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm break-words">{signal.description}</p>
+                    <p className="text-sm break-words">{signal.description || "No description"}</p>
                     <span className="text-[10px] text-muted-foreground">
                       {formatDistanceToNow(new Date(signal.created_at), { addSuffix: true })}
                     </span>
@@ -429,7 +430,7 @@ export function BusinessPanel({
                     {getEventIcon(event.event_type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm break-words">{event.description}</p>
+                    <p className="text-sm break-words">{event.description || "No description"}</p>
                     <span className="text-[10px] text-muted-foreground">
                       {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
                     </span>
