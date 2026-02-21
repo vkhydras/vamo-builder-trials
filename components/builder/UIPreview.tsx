@@ -74,12 +74,13 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
             size="icon"
             className="h-8 w-8"
             onClick={handleRefresh}
+            aria-label="Refresh preview"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </Button>
           {project.url && (
             <a href={project.url} target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Open in new tab">
                 <ExternalLink className="h-3.5 w-3.5" />
               </Button>
             </a>
@@ -96,6 +97,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
             size="icon"
             className={`h-8 w-8 ${device === "desktop" ? "bg-gray-900 text-white hover:bg-gray-800" : ""}`}
             onClick={() => setDevice("desktop")}
+            aria-label="Desktop view"
           >
             <Monitor className="h-3.5 w-3.5" />
           </Button>
@@ -104,6 +106,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
             size="icon"
             className={`h-8 w-8 ${device === "tablet" ? "bg-gray-900 text-white hover:bg-gray-800" : ""}`}
             onClick={() => setDevice("tablet")}
+            aria-label="Tablet view"
           >
             <Tablet className="h-3.5 w-3.5" />
           </Button>
@@ -112,6 +115,7 @@ export function UIPreview({ project, onOpenSettings }: UIPreviewProps) {
             size="icon"
             className={`h-8 w-8 ${device === "mobile" ? "bg-gray-900 text-white hover:bg-gray-800" : ""}`}
             onClick={() => setDevice("mobile")}
+            aria-label="Mobile view"
           >
             <Smartphone className="h-3.5 w-3.5" />
           </Button>

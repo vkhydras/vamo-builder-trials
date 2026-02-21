@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import { OPENAI_MODEL } from "@/lib/openai-config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +14,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId } = await request.json();
-
-    if (!projectId) {
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "projectId is required" },
+        { error: "Failed to generate offer: invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { projectId } = body as { projectId?: string };
+
+    if (!projectId || typeof projectId !== "string") {
+      return NextResponse.json(
+        { error: "Failed to generate offer: projectId is required" },
         { status: 400 }
       );
     }
@@ -31,7 +42,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return NextResponse.json({ error: "Failed to generate offer: project not found" }, { status: 404 });
     }
 
     // Load activity events
@@ -87,7 +98,7 @@ export async function POST(request: NextRequest) {
       };
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: OPENAI_MODEL,
         messages: [
           {
             role: "system",
@@ -115,7 +126,13 @@ If insufficient data, provide a minimal range and explain what data is needed.`,
       const raw = completion.choices[0]?.message?.content || "";
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        offerData = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        offerData = {
+          offer_low: typeof parsed.offer_low === "number" && parsed.offer_low >= 0 ? parsed.offer_low : Math.max(project.progress_score * 10, 100),
+          offer_high: typeof parsed.offer_high === "number" && parsed.offer_high >= 0 ? parsed.offer_high : Math.max(project.progress_score * 30, 500),
+          reasoning: typeof parsed.reasoning === "string" ? parsed.reasoning : "Estimate based on project activity.",
+          signals_used: Array.isArray(parsed.signals_used) ? parsed.signals_used.filter((s: unknown) => typeof s === "string") : [],
+        };
       } else {
         throw new Error("Failed to parse offer response");
       }
@@ -172,7 +189,7 @@ If insufficient data, provide a minimal range and explain what data is needed.`,
   } catch (error) {
     console.error("Offer API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to generate offer" },
       { status: 500 }
     );
   }

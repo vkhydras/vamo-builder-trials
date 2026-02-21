@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { awardReward } from "@/lib/rewards";
 import OpenAI from "openai";
+import { OPENAI_MODEL } from "@/lib/openai-config";
 
 const TAGGABLE = ["feature", "customer", "revenue"];
 
@@ -22,11 +23,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId, message, tag, messageId } = await request.json();
-
-    if (!projectId || (!message && !messageId)) {
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "projectId and message or messageId are required" },
+        { error: "Failed to process chat: invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { projectId, message, tag, messageId } = body as {
+      projectId?: string;
+      message?: string;
+      tag?: string;
+      messageId?: string;
+    };
+
+    if (!projectId || typeof projectId !== "string") {
+      return NextResponse.json(
+        { error: "Failed to process chat: projectId is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!message && !messageId) {
+      return NextResponse.json(
+        { error: "Failed to process chat: message or messageId is required" },
         { status: 400 }
       );
     }
@@ -100,7 +123,7 @@ export async function POST(request: NextRequest) {
       }));
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: OPENAI_MODEL,
         messages: [
           {
             role: "system",
@@ -145,7 +168,16 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
       const raw = completion.choices[0]?.message?.content || "";
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        aiResponse = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        aiResponse = {
+          reply: typeof parsed.reply === "string" ? parsed.reply : raw,
+          intent: ["feature", "customer", "revenue", "ask", "general"].includes(parsed.intent) ? parsed.intent : "general",
+          business_update: {
+            progress_delta: Math.min(Math.max(Number(parsed.business_update?.progress_delta) || 0, 0), 5),
+            traction_signal: typeof parsed.business_update?.traction_signal === "string" ? parsed.business_update.traction_signal : null,
+            valuation_adjustment: ["up", "down", "none"].includes(parsed.business_update?.valuation_adjustment) ? parsed.business_update.valuation_adjustment : "none",
+          },
+        };
       } else {
         aiResponse = {
           reply: raw,
@@ -313,7 +345,7 @@ Progress delta max is 5 per prompt. Be conservative with progress scores.`,
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to process chat message" },
       { status: 500 }
     );
   }

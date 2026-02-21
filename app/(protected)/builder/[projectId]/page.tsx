@@ -337,7 +337,7 @@ export default function BuilderPage() {
                 }
               }}
             />
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveName}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveName} aria-label="Save project name">
               <Check className="h-3.5 w-3.5" />
             </Button>
             <Button
@@ -348,6 +348,7 @@ export default function BuilderPage() {
                 setEditingName(false);
                 setNameInput(project.name);
               }}
+              aria-label="Cancel editing"
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -471,6 +472,7 @@ export default function BuilderPage() {
             <Button
               size="icon"
               className="fixed bottom-4 left-4 h-12 w-12 rounded-full shadow-lg z-50 bg-emerald-600 hover:bg-emerald-700"
+              aria-label="Open chat"
             >
               <MessageSquare className="h-5 w-5 text-white" />
             </Button>

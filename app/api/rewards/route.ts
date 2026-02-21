@@ -13,11 +13,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId, eventType, idempotencyKey } = await request.json();
-
-    if (!eventType || !idempotencyKey) {
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "eventType and idempotencyKey are required" },
+        { error: "Failed to process reward: invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { projectId, eventType, idempotencyKey } = body as {
+      projectId?: string;
+      eventType?: string;
+      idempotencyKey?: string;
+    };
+
+    if (!eventType || typeof eventType !== "string" || !idempotencyKey || typeof idempotencyKey !== "string") {
+      return NextResponse.json(
+        { error: "Failed to process reward: eventType and idempotencyKey are required" },
         { status: 400 }
       );
     }
@@ -33,7 +47,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Rewards API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to process reward" },
       { status: 500 }
     );
   }

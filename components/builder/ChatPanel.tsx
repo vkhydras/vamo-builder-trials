@@ -323,6 +323,7 @@ export function ChatPanel({ projectId, onMessageSent }: ChatPanelProps) {
             onClick={() => handleSend()}
             disabled={!input.trim() || sending}
             className="shrink-0 bg-foreground hover:bg-foreground/90 text-background"
+            aria-label="Send message"
           >
             <Send className="h-4 w-4" />
           </Button>

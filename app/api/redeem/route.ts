@@ -12,11 +12,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { amount, rewardType = "uber_eats" } = await request.json();
-
-    if (!amount || amount < 50) {
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "Minimum redemption is 50 pineapples" },
+        { error: "Failed to process redemption: invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const amount = typeof body.amount === "number" ? body.amount : 0;
+    const rewardType = typeof body.rewardType === "string" ? body.rewardType : "uber_eats";
+
+    if (!amount || !Number.isInteger(amount) || amount < 50) {
+      return NextResponse.json(
+        { error: "Failed to redeem: minimum redemption is 50 pineapples" },
         { status: 400 }
       );
     }
@@ -70,7 +81,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Redeem API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to process redemption" },
       { status: 500 }
     );
   }

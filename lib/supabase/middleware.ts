@@ -49,15 +49,29 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin route check
+  // Admin route check — cache result for 60s to avoid DB query on every request
   if (user && pathname.startsWith("/admin")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
+    const adminCacheKey = `is_admin_${user.id}`;
+    const cached = request.cookies.get(adminCacheKey)?.value;
+    let isAdmin = cached === "true";
 
-    if (!profile?.is_admin) {
+    if (cached === undefined) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+
+      isAdmin = !!profile?.is_admin;
+      supabaseResponse.cookies.set(adminCacheKey, String(isAdmin), {
+        maxAge: 60,
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/admin",
+      });
+    }
+
+    if (!isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = "/projects";
       return NextResponse.redirect(url);

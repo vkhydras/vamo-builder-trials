@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
+import { OPENAI_MODEL } from "@/lib/openai-config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +14,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId } = await request.json();
-
-    if (!projectId) {
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "projectId is required" },
+        { error: "Failed to generate description: invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { projectId } = body as { projectId?: string };
+
+    if (!projectId || typeof projectId !== "string") {
+      return NextResponse.json(
+        { error: "Failed to generate description: projectId is required" },
         { status: 400 }
       );
     }
@@ -30,7 +41,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return NextResponse.json({ error: "Failed to generate description: project not found" }, { status: 404 });
     }
 
     const { data: events } = await supabase
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest) {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: OPENAI_MODEL,
         messages: [
           {
             role: "system",
@@ -90,7 +101,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Listing description error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to generate listing description" },
       { status: 500 }
     );
   }

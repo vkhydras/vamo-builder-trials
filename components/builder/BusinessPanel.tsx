@@ -94,11 +94,31 @@ export function BusinessPanel({
   }, [refreshKey, loadData]);
 
   // Poll every 5 seconds during active session (spec Section 10)
+  // Pauses when tab is not visible to avoid unnecessary DB load
   useEffect(() => {
-    const interval = setInterval(() => {
-      void loadData();
-    }, 5000);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval>;
+
+    function startPolling() {
+      interval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          void loadData();
+        }
+      }, 5000);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void loadData(); // Refresh immediately when tab becomes visible
+      }
+    }
+
+    startPolling();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [loadData]);
 
   async function saveWhy() {
