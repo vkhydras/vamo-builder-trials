@@ -85,9 +85,9 @@ export default function SignupPage() {
       return;
     }
 
-    toast.success("Account created! Check your email to confirm, or sign in.");
-    router.push("/projects");
-    router.refresh();
+    await supabase.auth.signOut();
+    toast.success("Account created! Please sign in.");
+    router.push("/login");
   }
 
   return (

@@ -19,9 +19,15 @@ export default function ProjectsPage() {
   useEffect(() => {
     trackEvent("page_view", { path: "/projects" });
     async function loadProjects() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       const { data } = await supabase
         .from("projects")
         .select("*")
+        .eq("owner_id", user.id)
         .order("created_at", { ascending: false });
       setProjects(data || []);
       setLoading(false);
