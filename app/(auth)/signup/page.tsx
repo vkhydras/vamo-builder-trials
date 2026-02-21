@@ -70,7 +70,7 @@ export default function SignupPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         data: {
